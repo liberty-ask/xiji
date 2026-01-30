@@ -78,7 +78,7 @@ custom:
     key-prefix: "family:"
   sms:
     # 是否启用短信验证码（true-发送短信，false-返回验证码给前端，适用于开发/测试环境）
-    enable: ${SMS_ENABLE:true}
+    enable: ${SMS_ENABLE}
     # 阿里云短信配置
     access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID}
     access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET}
