@@ -40,6 +40,8 @@ CREATE TABLE `user` (
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
+INSERT INTO user (`id`, `username`, `password`, `email`, `phone`, `name`, `status`, `current_family_id`, `created_by`, `created_at`, `updated_by`, `updated_at`, `deleted`) VALUES (2009106647160520705, '13333333333', '$2a$10$3NcobJkp6KEXj5eV408FMOuwDf/b29fH2fw1RHqk2eHF.RaKqxGrO', '123367@123.com', '13333333333', '张三', 0, 2009106647676420098, NULL, '2026-01-08 11:35:27', NULL, '2026-01-08 11:54:03', 0);
+
 -- ============================================
 -- 2. 家庭表
 -- ============================================
@@ -56,6 +58,9 @@ CREATE TABLE `family` (
     KEY `idx_owner_id` (`owner_id`),
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='家庭表';
+
+INSERT INTO family (`id`, `name`, `owner_id`, `created_by`, `created_at`, `updated_by`, `updated_at`, `deleted`) VALUES (2009106647676420098, '张三的家庭', 2009106647160520705, NULL, '2026-01-08 11:35:27', NULL, '2026-01-08 11:35:27', 0);
+
 
 -- ============================================
 -- 3. 家庭成员关联表
@@ -76,6 +81,8 @@ CREATE TABLE `family_member` (
     KEY `idx_user_id` (`user_id`),
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='家庭成员关联表';
+
+INSERT INTO family_member (`id`, `family_id`, `user_id`, `role`, `created_by`, `created_at`, `updated_by`, `updated_at`, `deleted`) VALUES (2009106648322342914, 2009106647676420098, 2009106647160520705, 1, NULL, '2026-01-08 11:35:27', NULL, '2026-01-08 11:35:27', 0);
 
 -- ============================================
 -- 4. 家庭申请表
