@@ -1,0 +1,106 @@
+server:
+  port: 8089
+  address: 127.0.0.1
+
+
+#数据库
+spring:
+  datasource:
+    # HikariCP连接池配置（Spring Boot默认连接池）
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      # 连接池名称
+      pool-name: FamilyFinancialHikariCP
+      # 最小空闲连接数
+      minimum-idle: 5
+      # 最大连接数
+      maximum-pool-size: 20
+      # 连接超时时间（毫秒）
+      connection-timeout: 30000
+      # 空闲连接存活时间（毫秒）
+      idle-timeout: 600000
+      # 连接最大存活时间（毫秒）
+      max-lifetime: 1800000
+      # 连接测试查询
+      connection-test-query: SELECT 1
+      # 自动提交
+      auto-commit: true
+  servlet:
+    multipart:
+      max-file-size: 10MB #单个文件大小
+      max-request-size: 100MB #总文件大小
+  # Redis配置
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+      database: ${REDIS_DATABASE}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+
+#mybatis plus
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
+    global-config:
+      db-config:
+        update-strategy: not_empty #更新时只更新非空和非NULL字段
+        logic-delete-field: deleted # 全局逻辑删除字段名
+        logic-delete-value: 1 # 逻辑已删除值(默认为 1)
+        logic-not-delete-value: 0 # 逻辑未删除值(默认为 0)
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd} [%thread] %-5level %logger - %msg%n"
+
+# SpringDoc OpenAPI 3 配置
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+# 自定义配置
+custom:
+  jwt:
+    sign-key: ${JWT_SIGN_KEY}
+    expire: 43200000
+  redis:
+    # 验证码过期时间（秒）
+    captcha-expire: 300
+    # 缓存前缀
+    key-prefix: "family:"
+  sms:
+    # 测试环境关闭短信发送，返回验证码给前端
+    enable: false
+  oss:
+    # OSS Endpoint（如：https://oss-cn-hangzhou.aliyuncs.com 或 oss-cn-hangzhou.aliyuncs.com）
+    endpoint: ${ALIYUN_OSS_ENDPOINT}
+    # 阿里云AccessKey ID
+    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID}
+    # 阿里云AccessKey Secret
+    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET}
+    # Bucket名称
+    bucket-name: ${ALIYUN_OSS_BUCKET_NAME}
+    # 自定义域名（可选，如果配置了自定义域名，文件URL将使用此域名）
+    custom-domain: ${ALIYUN_OSS_CUSTOM_DOMAIN}
+    # 文件上传目录，用于区分环境（如：prod/uploads/ 或 test/uploads/）
+    folder: ${ALIYUN_OSS_FOLDER}
+  zhipu-ai:
+    # 智谱AI API Key（请替换为实际的API Key）
+    api-key: ${ZHIPU_AI_API_KEY}
+    # 模型名称（默认使用glm-4-flash）
+    model: ${ZHIPU_AI_MODEL}
