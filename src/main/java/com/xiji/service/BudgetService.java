@@ -15,33 +15,24 @@ public interface BudgetService extends IService<Budget> {
     /**
      * 获取或创建预算
      * @param familyId 家庭ID
-     * @param year 年份
-     * @param month 月份（1-12，如果为null则表示年度预算）
-     * @param type 预算类型（0-收入，1-支出）
      * @return 预算对象
      */
-    Budget getOrCreateBudget(Long familyId, Integer year, Integer month, Integer type);
+    Budget getOrCreateBudget(Long familyId);
     
     /**
      * 设置预算
      * @param familyId 家庭ID
-     * @param year 年份
-     * @param month 月份（1-12，如果为null则表示年度预算）
      * @param amount 预算金额
-     * @param type 预算类型（0-收入，1-支出）
      * @return 是否成功
      */
-    boolean setBudget(Long familyId, Integer year, Integer month, BigDecimal amount, Integer type);
+    boolean setBudget(Long familyId, BigDecimal amount);
     
     /**
      * 获取预算
      * @param familyId 家庭ID
-     * @param year 年份
-     * @param month 月份（1-12，如果为null则表示年度预算）
-     * @param type 预算类型（0-收入，1-支出）
      * @return 预算对象，如果不存在返回null
      */
-    Budget getBudget(Long familyId, Integer year, Integer month, Integer type);
+    Budget getBudget(Long familyId);
 }
 
 

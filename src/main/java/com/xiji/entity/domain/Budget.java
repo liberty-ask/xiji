@@ -33,24 +33,9 @@ public class Budget extends BaseEntity {
     private Long familyId;
     
     /**
-     * 年份
-     */
-    private Integer year;
-    
-    /**
-     * 月份（1-12，如果为null则表示年度预算）
-     */
-    private Integer month;
-    
-    /**
      * 预算金额
      */
     private BigDecimal amount;
-    
-    /**
-     * 预算类型：0-收入预算，1-支出预算
-     */
-    private Integer type;
 }
 
 

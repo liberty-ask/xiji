@@ -230,7 +230,7 @@ public class HomeController extends BaseController {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // 获取本月支出预算
-        Budget budgetEntity = budgetService.getBudget(familyId, now.getYear(), now.getMonthValue(), 1);
+        Budget budgetEntity = budgetService.getBudget(familyId);
         BigDecimal budgetTotal = budgetEntity != null && budgetEntity.getAmount() != null 
                 ? budgetEntity.getAmount() 
                 : BigDecimal.ZERO;
