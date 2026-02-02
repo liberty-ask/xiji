@@ -189,20 +189,15 @@ CREATE TABLE `operation_logs` (
 CREATE TABLE `budget` (
     `id` BIGINT(20) NOT NULL COMMENT '预算ID（雪花算法生成）',
     `family_id` BIGINT(20) NOT NULL COMMENT '家庭ID',
-    `year` INT(4) NOT NULL COMMENT '年份',
-    `month` INT(2) DEFAULT NULL COMMENT '月份（1-12，如果为NULL则表示年度预算）',
     `amount` DECIMAL(20,2) NOT NULL COMMENT '预算金额',
-    `type` INT(1) NOT NULL COMMENT '预算类型：0-收入预算，1-支出预算',
     `created_by` BIGINT(20) DEFAULT NULL COMMENT '创建人ID',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_by` BIGINT(20) DEFAULT NULL COMMENT '修改人ID',
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` INT(1) DEFAULT 0 COMMENT '逻辑删除标识：0-未删除，1-已删除',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_family_year_month_type` (`family_id`, `year`, `month`, `type`, `deleted`),
+    UNIQUE KEY `uk_family_year_month_type` (`family_id`, `deleted`),
     KEY `idx_family_id` (`family_id`),
-    KEY `idx_year` (`year`),
-    KEY `idx_type` (`type`),
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='预算表';
 
