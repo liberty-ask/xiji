@@ -13,8 +13,8 @@
 
 ### 相关仓库
 
-- **前端仓库**：[xiji_flutter](https://gitee.com/duyuanyua/xiji_flutter.git)（Flutter 跨平台应用）
-- **后端仓库**：[xiji](https://gitee.com/duyuanyua/xiji.git)（Spring Boot 后端服务）
+- **前端仓库**：[xiji_flutter](https://github.com/liberty-ask/xiji_flutter.git)（Flutter 跨平台应用）
+- **后端仓库**：[xiji](https://github.com/liberty-ask/xiji.git)（Spring Boot 后端服务）
 
 ### 核心优势
 
