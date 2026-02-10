@@ -409,6 +409,9 @@ public class MobileStatisticsController extends BaseController {
         
         if (type != null) {
             queryWrapper.eq(Transactions::getType, type);
+        } else {
+            // 当type为null时，只查询收入(0)和支出(1)类型的交易，排除不计收支类型(2)的记录
+            queryWrapper.in(Transactions::getType, 0, 1);
         }
         
         // 通过createdBy字段过滤成员（createdBy表示创建该交易记录的用户，通常是记录交易的成员）

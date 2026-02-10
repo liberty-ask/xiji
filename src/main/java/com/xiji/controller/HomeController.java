@@ -254,6 +254,7 @@ public class HomeController extends BaseController {
         recentQuery.eq(Transactions::getFamilyId, familyId)
                 .orderByDesc(Transactions::getDate)
                 .orderByDesc(Transactions::getCreatedAt)
+                .ne(Transactions::getType, 2)
                 .last("LIMIT 10");
         List<Transactions> recentTransactions = transactionsService.list(recentQuery);
 

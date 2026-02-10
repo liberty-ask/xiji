@@ -39,31 +39,6 @@ public class MobileCalendarController extends BaseController {
     private final CategoryService categoryService;
 
     /**
-     * 格式化金额（带千分位，不带小数）
-     */
-    private String formatAmountNoDecimal(BigDecimal amount) {
-        if (amount == null) {
-            return "0";
-        }
-        NumberFormat formatter = NumberFormat.getInstance();
-        formatter.setGroupingUsed(true);
-        formatter.setMaximumFractionDigits(0);
-        formatter.setMinimumFractionDigits(0);
-        return formatter.format(amount);
-    }
-
-    /**
-     * 格式化金额（不带千分位，带两位小数）
-     */
-    private String formatAmountWithDecimal(BigDecimal amount) {
-        if (amount == null) {
-            return "0.00";
-        }
-        DecimalFormat df = new DecimalFormat("0.00");
-        return df.format(amount);
-    }
-
-    /**
      * 获取日历概览数据
      */
     @GetMapping("/overview")
@@ -96,6 +71,7 @@ public class MobileCalendarController extends BaseController {
         queryWrapper.eq(Transactions::getFamilyId, familyId)
                 .ge(Transactions::getDate, firstDayOfMonth)
                 .le(Transactions::getDate, lastDayOfMonth)
+                .ne(Transactions::getType, 2)
                 .orderByDesc(Transactions::getDate)
                 .orderByDesc(Transactions::getCreatedAt);
 

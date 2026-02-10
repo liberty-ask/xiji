@@ -230,7 +230,7 @@ public class JdBillParser implements BillParser {
         // 收/支类型（使用"收/支"）
         String incomeExpense = getCellValueFromMap(row, "收/支");
         if("不计收支".contains(incomeExpense)){
-            return null;
+            transaction.setType(2); // 2-不计收支
         }else if ("收入".equals(incomeExpense) || "收款".equals(incomeExpense) || "收".equals(incomeExpense)) {
             transaction.setType(0);
         } else if ("支出".equals(incomeExpense) || "付款".equals(incomeExpense) || "支".equals(incomeExpense)) {

@@ -190,7 +190,7 @@ public class AlipayBillParser implements BillParser {
         } else if ("支出".equals(incomeExpense) || "付款".equals(incomeExpense)) {
             transaction.setType(1);
         } else if ("不计收支".equals(incomeExpense)) {
-            return null;
+            transaction.setType(2); // 2-不计收支
         } else {
             // 如果没有明确标识，根据金额正负判断（支付宝账单通常支出为正）
             if (transaction.getAmount() != null && transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
@@ -258,7 +258,7 @@ public class AlipayBillParser implements BillParser {
         } else if ("支出".equals(incomeExpense) || "付款".equals(incomeExpense)) {
             transaction.setType(1);
         } else if ("不计收支".equals(incomeExpense)) {
-            return null;
+            transaction.setType(2); // 2-不计收支
         } else {
             // 如果没有明确标识，根据金额正负判断（支付宝账单通常支出为正）
             if (transaction.getAmount() != null && transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {

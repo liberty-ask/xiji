@@ -135,19 +135,31 @@ public class BillImportServiceImpl implements BillImportService {
         
         for (BillTransaction billTransaction : transactions) {
             try {
-                // 去重检查（基于交易单号，避免与数据库中的记录重复，也避免本次导入中的重复）
+                // 检查是否为退款记录
+                boolean isRefund = billTransaction.getDescription() != null && 
+                    (billTransaction.getDescription().contains("退款") || 
+                     billTransaction.getStatus() != null && billTransaction.getStatus().contains("退款"));
+                
+                // 如果是退款记录，无论解析器设置的类型是什么，都设置为收入类型
+                if (isRefund) {
+                    billTransaction.setType(0); // 退款作为收入类型
+                    log.debug("识别为退款交易，设置为收入类型，tradeNo：{}", billTransaction.getTradeNo());
+                }
+                
+                // 去重检查（基于交易单号）
                 if (request.getSkipDuplicates() != null && request.getSkipDuplicates()) {
                     if (billTransaction.getTradeNo() != null && !billTransaction.getTradeNo().isEmpty()) {
                         // 检查是否已存在（数据库或本次导入中）
                         if (existingTradeNos.contains(billTransaction.getTradeNo())) {
+                            // 交易单号已存在，跳过
                             skipCount++;
-                            // 将重复记录添加到错误列表中
-                    addImportError(result, billTransaction.getTradeNo(), "交易单号重复，需要写入的记录已跳过", billTransaction.getDescription());
+                            addImportError(result, billTransaction.getTradeNo(), "交易单号重复，需要写入的记录已跳过", billTransaction.getDescription());
                             log.debug("跳过重复交易，tradeNo：{}", billTransaction.getTradeNo());
                             continue;
+                        } else {
+                            // 添加到已处理集合，避免本次导入中重复
+                            existingTradeNos.add(billTransaction.getTradeNo());
                         }
-                        // 添加到已处理集合，避免本次导入中重复
-                        existingTradeNos.add(billTransaction.getTradeNo());
                     }
                 }
                 
@@ -160,7 +172,13 @@ public class BillImportServiceImpl implements BillImportService {
                 Long categoryId = categoryNameToIdMap.get(categoryName);
                 if (categoryId == null) {
                     // 如果分类不存在，使用"其他"分类
-                    List<Category> categories = categoryMap.get(billTransaction.getType());
+                    List<Category> categories;
+                    if (billTransaction.getType() == 2) {
+                        // 不计收支类型，使用支出分类的"其他"分类
+                        categories = categoryMap.get(1);
+                    } else {
+                        categories = categoryMap.get(billTransaction.getType());
+                    }
                     Category defaultCategory = categories != null ? categories.stream()
                         .filter(c -> "其他".equals(c.getName()))
                         .findFirst()
