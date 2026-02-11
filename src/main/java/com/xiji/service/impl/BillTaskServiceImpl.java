@@ -6,6 +6,8 @@ import com.xiji.entity.domain.BillTask;
 import com.xiji.mapper.BillTaskMapper;
 import com.xiji.service.BillTaskService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.List;
 public class BillTaskServiceImpl extends ServiceImpl<BillTaskMapper, BillTask> implements BillTaskService {
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public void updateTaskStatus(Long taskId, Integer status, Integer progress, Integer totalCount, Integer successCount, Integer failCount, String errorMessage) {
         BillTask task = new BillTask();
         task.setId(taskId);
