@@ -1,5 +1,6 @@
 package com.xiji.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xiji.entity.domain.Category;
 import com.xiji.entity.domain.Transactions;
 import com.xiji.entity.dto.request.BillImportRequest;
@@ -114,7 +115,7 @@ public class BillImportServiceImpl implements BillImportService {
             if (!tradeNosToCheck.isEmpty()) {
                 // 查询该家庭中已存在的交易
                 List<Transactions> existingTransactions = transactionsService.list(
-                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Transactions>()
+                    new LambdaQueryWrapper<Transactions>()
                         .eq(Transactions::getFamilyId, familyId)
                         .in(Transactions::getTradeNo, tradeNosToCheck)
                         .isNotNull(Transactions::getTradeNo)
@@ -122,7 +123,7 @@ public class BillImportServiceImpl implements BillImportService {
                 
                 existingTradeNoTypePairs = existingTransactions.stream()
                     .filter(t -> t.getTradeNo() != null && !t.getTradeNo().isEmpty() && t.getType() != null)
-                    .map(t -> t.getTradeNo() + "_" + t.getType())
+                    .map(t -> t.getTradeNo() + "_" + t.getType() + "_" + t.getMerchantOrderNo())
                     .collect(Collectors.toSet());
                 
                 log.info("查询到已存在的交易（单号+类型）组合数量：{}，待检查单号数量：{}", 
@@ -146,15 +147,15 @@ public class BillImportServiceImpl implements BillImportService {
                     log.debug("识别为退款交易，设置为收入类型，tradeNo：{}", billTransaction.getTradeNo());
                 }
                 
-                // 去重检查（基于交易单号+类型组合）
+                // 去重检查（基于交易单号+类型+商家订单号组合）
                 if (request.getSkipDuplicates() != null && request.getSkipDuplicates()) {
                     if (billTransaction.getTradeNo() != null && !billTransaction.getTradeNo().isEmpty() && billTransaction.getType() != null) {
-                        String tradeNoTypePair = billTransaction.getTradeNo() + "_" + billTransaction.getType();
+                        String tradeNoTypePair = billTransaction.getTradeNo() + "_" + billTransaction.getType() + "_" + billTransaction.getMerchantOrderNo();
                         // 检查是否已存在（数据库或本次导入中）
                         if (existingTradeNoTypePairs.contains(tradeNoTypePair)) {
-                            // 交易单号和类型组合已存在，跳过
+                            // 交易单号、类型、商家订单号组合已存在，跳过
                             skipCount++;
-                            addImportError(result, billTransaction.getTradeNo(), "交易单号和类型组合重复，需要写入的记录已跳过", billTransaction.getDescription());
+                            addImportError(result, billTransaction.getTradeNo(), "交易单号、类型、商家订单号组合重复，需要写入的记录已跳过", billTransaction.getDescription());
                             log.debug("跳过重复交易，tradeNo：{}，type：{}", billTransaction.getTradeNo(), billTransaction.getType());
                             continue;
                         } else {
@@ -204,6 +205,7 @@ public class BillImportServiceImpl implements BillImportService {
                 transaction.setDescription(billTransaction.getDescription());
                 transaction.setPayMethod(billTransaction.getPayMethod());
                 transaction.setTradeNo(billTransaction.getTradeNo()); // 设置交易单号
+                transaction.setMerchantOrderNo(billTransaction.getMerchantOrderNo());
                 transaction.setPlatform(platform); // 设置平台来源
                 transaction.setCreatedBy(userId);
                 transaction.setCounterparty(billTransaction.getCounterparty());

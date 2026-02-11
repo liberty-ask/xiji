@@ -18,6 +18,11 @@ public class BillTransaction {
      * 交易单号（用于去重）
      */
     private String tradeNo;
+
+    /**
+     * 商家订单号/商户单号
+     */
+    private String merchantOrderNo;
     
     /**
      * 交易日期

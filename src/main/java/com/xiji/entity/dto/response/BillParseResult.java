@@ -54,7 +54,7 @@ public class BillParseResult {
      * 完整的交易记录列表（用于缓存和导入，不包含在预览中）
      * 注意：此字段在返回给前端时通常不包含，仅用于内部缓存
      */
-    private List<com.xiji.parser.model.BillTransaction> transactions;
+    private List<BillTransaction> transactions;
     
     /**
      * 账单交易预览

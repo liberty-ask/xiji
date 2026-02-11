@@ -226,36 +226,40 @@ public class JdBillParser implements BillParser {
 
         // 收/支类型（使用"收/支"）
         String incomeExpense = getCellValueFromMap(row, "收/支");
-        if("不计收支".contains(incomeExpense)){
-            transaction.setType(2); // 2-不计收支
-        }else if ("收入".equals(incomeExpense) || "收款".equals(incomeExpense) || "收".equals(incomeExpense)) {
-            transaction.setType(0);
-        } else if ("支出".equals(incomeExpense) || "付款".equals(incomeExpense) || "支".equals(incomeExpense)) {
-            transaction.setType(1);
-        } else {
-            // 如果没有明确标识，根据金额正负判断
-            if (transaction.getAmount() != null) {
-                if (transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
-                    transaction.setType(1); // 默认支出
+        // 金额（使用"金额"）
+        String amountStr = getCellValueFromMap(row, "金额");
+        switch (incomeExpense) {
+            case "不计收支" -> {
+                if (amountStr != null && amountStr.contains("已全额退款")) {
+                    transaction.setType(1);
                 } else {
-                    transaction.setType(0); // 收入
+                    transaction.setType(2); // 2-不计收支
+                }
+            }
+            case "收入", "收款", "收" -> transaction.setType(0);
+            case "支出", "付款", "支" -> transaction.setType(1);
+            case null, default -> {
+                // 如果没有明确标识，根据金额正负判断
+                if (transaction.getAmount() != null) {
+                    if (transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+                        transaction.setType(1); // 默认支出
+                    } else {
+                        transaction.setType(0); // 收入
+                    }
                 }
             }
         }
+
+        // 清理金额字符串，去除括号及其内容（如：19.88(已退款2) -> 19.88）
+        transaction.setAmount(ExcelUtil.parseAmount(cleanAmountString(amountStr)));
         
         // 交易订单号（优先使用"交易订单号"，其次"商家订单号"）
-        String tradeNo = getCellValueFromMap(row, "交易订单号", "商家订单号");
-        transaction.setTradeNo(tradeNo);
+        transaction.setTradeNo(getCellValueFromMap(row, "交易订单号"));
+        //商家订单号
+        transaction.setMerchantOrderNo(getCellValueFromMap(row, "商家订单号"));
         
         // 交易日期（使用"交易时间"）
-        String dateStr = getCellValueFromMap(row, "交易时间");
-        transaction.setDate(ExcelUtil.parseDate(dateStr));
-        
-        // 金额（使用"金额"）
-        String amountStr = getCellValueFromMap(row, "金额");
-        // 清理金额字符串，去除括号及其内容（如：19.88(已退款2) -> 19.88）
-        amountStr = cleanAmountString(amountStr);
-        transaction.setAmount(ExcelUtil.parseAmount(amountStr));
+        transaction.setDate(ExcelUtil.parseDate(getCellValueFromMap(row, "交易时间")));
         
         // 商户名称（作为交易对方）
         transaction.setCounterparty(getCellValueFromMap(row, "商户名称"));

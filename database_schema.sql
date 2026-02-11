@@ -143,6 +143,7 @@ CREATE TABLE `transactions` (
     `date` DATE NOT NULL COMMENT '交易日期',
     `description` VARCHAR(500) DEFAULT NULL COMMENT '描述',
     `trade_no` VARCHAR(100) DEFAULT NULL COMMENT '交易单号（用于去重，账单导入时使用）',
+    `merchant_order_no` VARCHAR(100) DEFAULT NULL COMMENT '商家订单号/商户单号',
     `platform` VARCHAR(50) DEFAULT NULL COMMENT '平台来源（支付宝、微信、京东、招商银行等，账单导入时使用）',
     `created_by` BIGINT(20) DEFAULT NULL COMMENT '创建人ID',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

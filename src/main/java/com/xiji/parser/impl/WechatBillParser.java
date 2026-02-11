@@ -202,14 +202,14 @@ public class WechatBillParser implements BillParser {
             tradeNo = "wechat_" + (time != null ? time : "") + "_" + (amount != null ? amount : "") + "_" + (counterparty != null ? counterparty : "");
         }
         transaction.setTradeNo(tradeNo);
+        //商户单号
+        transaction.setMerchantOrderNo(getCellValueFromIndexMap(row, columnIndexMap, "商户单号"));
         
         // 交易日期（优先使用"交易时间"，其次"支付时间"）
-        String dateStr = getCellValueFromIndexMap(row, columnIndexMap, "交易时间");
-        transaction.setDate(ExcelUtil.parseDate(dateStr));
+        transaction.setDate(ExcelUtil.parseDate(getCellValueFromIndexMap(row, columnIndexMap, "交易时间")));
         
         // 金额（优先使用"金额"，其次"金额(元)"）
-        String amountStr = getCellValueFromIndexMap(row, columnIndexMap, "金额(元)");
-        transaction.setAmount(ExcelUtil.parseAmount(amountStr));
+        transaction.setAmount(ExcelUtil.parseAmount(getCellValueFromIndexMap(row, columnIndexMap, "金额(元)")));
         
         // 收/支类型
         String incomeExpense = getCellValueFromIndexMap(row, columnIndexMap, "收/支");

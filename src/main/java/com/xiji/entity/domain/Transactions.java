@@ -45,6 +45,11 @@ public class Transactions extends BaseEntity {
      * 交易单号（用于去重，账单导入时使用）
      */
     private String tradeNo;
+
+    /**
+     * 商家订单号/商户单号
+     */
+    private String merchantOrderNo;
     
     /**
      * 平台来源（支付宝、微信、京东、招商银行等，账单导入时使用）

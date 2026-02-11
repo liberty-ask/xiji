@@ -106,7 +106,7 @@ public class AlipayBillParser implements BillParser {
                 int actualRowNumber = csvHeaderRow + 1 + rowIndex; // 实际行号 = 表头行 + 1 + 数据索引
                 try {
                     BillTransaction transaction = parseRowFromMap(row, headers);
-                    if (transaction != null && transaction.getDate() != null && transaction.getAmount() != null) {
+                    if (transaction.getDate() != null && transaction.getAmount() != null) {
                         transactions.add(transaction);
                         successCount++;
                     } else {
@@ -182,62 +182,7 @@ public class AlipayBillParser implements BillParser {
         
         return result;
     }
-    
-    /**
-     * 解析单行数据（从Excel格式的Map，key为列索引）
-     */
-    private BillTransaction parseRowFromIndexMap(Map<Integer, String> row, Map<String, Integer> columnIndexMap) {
-        BillTransaction transaction = new BillTransaction();
-        // 收/支类型
-        String incomeExpense = getCellValueFromIndexMap(row, columnIndexMap, "收/支");
-        if ("收入".equals(incomeExpense) || "收款".equals(incomeExpense)) {
-            transaction.setType(0);
-        } else if ("支出".equals(incomeExpense) || "付款".equals(incomeExpense)) {
-            transaction.setType(1);
-        } else if ("不计收支".equals(incomeExpense)) {
-            transaction.setType(2); // 2-不计收支
-        } else {
-            // 如果没有明确标识，根据金额正负判断（支付宝账单通常支出为正）
-            if (transaction.getAmount() != null && transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
-                transaction.setType(1); // 默认支出
-            }
-        }
-        
-        // 交易订单号（优先使用"交易订单号"，其次"交易号"，最后"交易单号"）
-        String tradeNo = getCellValueFromIndexMap(row, columnIndexMap, "交易订单号");
-        transaction.setTradeNo(tradeNo);
-        
-        // 交易日期（优先使用"交易时间"，其次"交易创建时间"，最后"付款时间"）
-        String dateStr = getCellValueFromIndexMap(row, columnIndexMap, "交易时间");
-        transaction.setDate(ExcelUtil.parseDate(dateStr));
-        
-        // 金额（优先使用"金额"，其次"金额（元）"）
-        String amountStr = getCellValueFromIndexMap(row, columnIndexMap, "金额");
-        transaction.setAmount(ExcelUtil.parseAmount(amountStr));
-        
-        // 交易对方
-        transaction.setCounterparty(getCellValueFromIndexMap(row, columnIndexMap, "交易对方"));
-        // 交易分类
-        transaction.setCategory(getCellValueFromIndexMap(row, columnIndexMap, "交易分类"));
 
-        // 商品说明/备注（优先使用"商品说明"，其次"商品名称"，最后"备注"）
-        String description = getCellValueFromIndexMap(row, columnIndexMap, "商品说明");
-        transaction.setDescription(description);
-        
-        // 支付方式
-        transaction.setPayMethod(getCellValueFromIndexMap(row, columnIndexMap, "收/付款方式"));
-        
-        // 交易状态
-        transaction.setStatus(getCellValueFromIndexMap(row, columnIndexMap, "交易状态"));
-        
-        // 保存原始数据
-        for (Map.Entry<Integer, String> entry : row.entrySet()) {
-            transaction.getRawData().put("col_" + entry.getKey(), entry.getValue());
-        }
-        
-        return transaction;
-    }
-    
     /**
      * 解析单行数据（从CSV格式的Map，key为列名）
      */
@@ -245,16 +190,16 @@ public class AlipayBillParser implements BillParser {
         BillTransaction transaction = new BillTransaction();
         
         // 交易订单号（优先使用"交易订单号"，其次"交易号"，最后"交易单号"）
-        String tradeNo = getCellValueFromMap(row, "交易订单号");
-        transaction.setTradeNo(tradeNo);
+        transaction.setTradeNo(getCellValueFromMap(row, "交易订单号"));
+
+        //商家订单号
+        transaction.setMerchantOrderNo(getCellValueFromMap(row, "商家订单号"));
         
         // 交易日期（优先使用"交易时间"，其次"交易创建时间"，最后"付款时间"）
-        String dateStr = getCellValueFromMap(row, "交易时间");
-        transaction.setDate(ExcelUtil.parseDate(dateStr));
+        transaction.setDate(ExcelUtil.parseDate(getCellValueFromMap(row, "交易时间")));
         
         // 金额（优先使用"金额"，其次"金额（元）"）
-        String amountStr = getCellValueFromMap(row, "金额");
-        transaction.setAmount(ExcelUtil.parseAmount(amountStr));
+        transaction.setAmount(ExcelUtil.parseAmount(getCellValueFromMap(row, "金额")));
         
         // 收/支类型
         String incomeExpense = getCellValueFromMap(row, "收/支");
