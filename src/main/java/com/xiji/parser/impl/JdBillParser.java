@@ -51,38 +51,35 @@ public class JdBillParser implements BillParser {
             byte[] bytes = inputStream.readAllBytes();
             ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
             
-            // 尝试读取表头（跳过前21行，第22行是表头）
+            // 尝试读取第二行（索引为1，从0开始计数）的内容
             // 京东CSV账单可能使用GBK或UTF-8编码，先尝试UTF-8
-            List<String> headers = null;
+            List<String> secondRowCells = null;
             try {
                 bis = new ByteArrayInputStream(bytes);
-                headers = CsvUtil.readHeaders(bis, HEADER_ROW_INDEX, StandardCharsets.UTF_8);
+                secondRowCells = CsvUtil.readHeaders(bis, 1, StandardCharsets.UTF_8);
             } catch (Exception e) {
                 // 如果UTF-8失败，尝试GBK编码
                 try {
                     bis = new ByteArrayInputStream(bytes);
-                    headers = CsvUtil.readHeaders(bis, HEADER_ROW_INDEX, Charset.forName("GBK"));
+                    secondRowCells = CsvUtil.readHeaders(bis, 1, Charset.forName("GBK"));
                 } catch (Exception e2) {
-                    log.warn("读取京东账单表头失败", e2);
+                    log.warn("读取京东账单第二行失败", e2);
                     return false;
                 }
             }
             
-            if (headers == null || headers.isEmpty()) {
+            if (secondRowCells == null || secondRowCells.isEmpty()) {
                 return false;
             }
             
-            // 京东账单特征：包含"交易时间"、"商户名称"、"交易说明"、"金额"、"收/支"、"交易订单号"等字段
-            Set<String> headerSet = new HashSet<>(headers);
-            boolean hasTradeTime = headerSet.contains("交易时间");
-            boolean hasMerchantName = headerSet.contains("商户名称");
-            boolean hasTradeDescription = headerSet.contains("交易说明");
-            boolean hasAmount = headerSet.contains("金额");
-            boolean hasIncomeExpense = headerSet.contains("收/支");
-            boolean hasTradeOrderNo = headerSet.contains("交易订单号");
+            // 获取第二行第一个单元格的内容
+            String firstCellValue = secondRowCells.get(0);
+            if (firstCellValue == null || firstCellValue.trim().isEmpty()) {
+                return false;
+            }
             
-            // 至少需要包含这些关键字段
-            return hasTradeTime && hasAmount && hasIncomeExpense && hasTradeOrderNo;
+            // 判断第二行第一个单元格是否包含"京东账号"
+            return firstCellValue.contains("京东账号");
         } catch (Exception e) {
             log.warn("识别京东账单格式失败", e);
             return false;
@@ -144,7 +141,7 @@ public class JdBillParser implements BillParser {
                 int actualRowNumber = csvHeaderRow + 1 + rowIndex; // 实际行号 = 表头行 + 1 + 数据索引
                 try {
                     BillTransaction transaction = parseRowFromMap(row, headers);
-                    if (transaction != null && transaction.getDate() != null && transaction.getAmount() != null) {
+                    if (transaction.getDate() != null && transaction.getAmount() != null) {
                         transactions.add(transaction);
                         successCount++;
                     } else {

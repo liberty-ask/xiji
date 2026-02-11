@@ -45,17 +45,21 @@ public class WechatBillParser implements BillParser {
             byte[] bytes = inputStream.readAllBytes();
             ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
             
-            // 微信Excel账单从第17行开始才是表头（跳过前16行，索引16）
-            List<String> headers = ExcelUtil.readHeaders(bis, fileType, 16);
+            // 尝试读取第一行内容（使用ExcelUtil.readHeaders方法，跳过0行，即读取第一行）
+            List<String> firstRowCells = ExcelUtil.readHeaders(bis, fileType, 0);
             
-            // 微信账单特征：包含"交易时间"、"交易类型"/"收/支"、"交易对方"等字段
-            Set<String> headerSet = new HashSet<>(headers);
-            boolean hasTradeTime = headerSet.contains("交易时间") || headerSet.contains("支付时间");
-            boolean hasTradeType = headerSet.contains("交易类型") || headerSet.contains("类型") || headerSet.contains("收/支");
-            boolean hasCounterparty = headerSet.contains("交易对方") || headerSet.contains("对方账户");
-            boolean hasAmount = headerSet.contains("金额") || headerSet.contains("金额(元)") || headerSet.contains("收/支(元)");
+            if (firstRowCells == null || firstRowCells.isEmpty()) {
+                return false;
+            }
             
-            return hasTradeTime && hasTradeType && hasCounterparty && hasAmount;
+            // 获取第一行第一个单元格的内容
+            String firstCellValue = firstRowCells.get(0);
+            if (firstCellValue == null || firstCellValue.trim().isEmpty()) {
+                return false;
+            }
+            
+            // 判断第一行是否包含"微信支付账单"
+            return firstCellValue.contains("微信支付账单");
         } catch (Exception e) {
             log.warn("识别微信账单格式失败", e);
             return false;

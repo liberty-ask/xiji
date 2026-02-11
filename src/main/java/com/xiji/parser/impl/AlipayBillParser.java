@@ -46,17 +46,22 @@ public class AlipayBillParser implements BillParser {
             byte[] bytes = inputStream.readAllBytes();
             ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
             
-            // 支付宝CSV账单从第25行开始才是表头（跳过前24行），使用GBK编码
-            List<String> headers = CsvUtil.readHeaders(bis, 24, Charset.forName("GBK"));
+            // 尝试读取第4行（索引为3，从0开始计数）的内容
+            // 支付宝CSV账单使用GBK编码
+            List<String> fourthRowCells = CsvUtil.readHeaders(bis, 3, Charset.forName("GBK"));
             
-            // 支付宝账单特征：包含"交易订单号"/"交易号"、"交易时间"/"交易创建时间"、"交易对方"等字段
-            Set<String> headerSet = new HashSet<>(headers);
-            boolean hasTradeNo = headerSet.contains("交易订单号") || headerSet.contains("交易号") || headerSet.contains("交易单号");
-            boolean hasTradeTime = headerSet.contains("交易时间") || headerSet.contains("交易创建时间") || headerSet.contains("付款时间");
-            boolean hasCounterparty = headerSet.contains("交易对方");
-            boolean hasAmount = headerSet.contains("金额") || headerSet.contains("金额（元）");
+            if (fourthRowCells == null || fourthRowCells.isEmpty()) {
+                return false;
+            }
             
-            return hasTradeNo && hasTradeTime && hasCounterparty && hasAmount;
+            // 获取第4行第一个单元格的内容
+            String firstCellValue = fourthRowCells.get(0);
+            if (firstCellValue == null || firstCellValue.trim().isEmpty()) {
+                return false;
+            }
+            
+            // 判断第4行第一个单元格是否包含"支付宝账户"
+            return firstCellValue.contains("支付宝账户");
         } catch (Exception e) {
             log.warn("识别支付宝账单格式失败", e);
             return false;

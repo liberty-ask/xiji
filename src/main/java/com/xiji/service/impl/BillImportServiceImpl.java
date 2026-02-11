@@ -102,8 +102,8 @@ public class BillImportServiceImpl implements BillImportService {
             }
         }
         
-        // 获取已存在的交易单号（用于去重）
-        Set<String> existingTradeNos = new HashSet<>();
+        // 获取已存在的交易（交易单号 + 类型）组合（用于去重）
+        Set<String> existingTradeNoTypePairs = new HashSet<>();
         if (request.getSkipDuplicates() != null && request.getSkipDuplicates()) {
             // 从账单交易中提取所有非空的交易单号
             Set<String> tradeNosToCheck = transactions.stream()
@@ -112,7 +112,7 @@ public class BillImportServiceImpl implements BillImportService {
                 .collect(Collectors.toSet());
             
             if (!tradeNosToCheck.isEmpty()) {
-                // 查询该家庭中已存在的交易单号
+                // 查询该家庭中已存在的交易
                 List<Transactions> existingTransactions = transactionsService.list(
                     new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Transactions>()
                         .eq(Transactions::getFamilyId, familyId)
@@ -120,13 +120,13 @@ public class BillImportServiceImpl implements BillImportService {
                         .isNotNull(Transactions::getTradeNo)
                 );
                 
-                existingTradeNos = existingTransactions.stream()
-                    .map(Transactions::getTradeNo)
-                    .filter(tradeNo -> tradeNo != null && !tradeNo.isEmpty())
+                existingTradeNoTypePairs = existingTransactions.stream()
+                    .filter(t -> t.getTradeNo() != null && !t.getTradeNo().isEmpty() && t.getType() != null)
+                    .map(t -> t.getTradeNo() + "_" + t.getType())
                     .collect(Collectors.toSet());
                 
-                log.info("查询到已存在的交易单号数量：{}，待检查数量：{}", 
-                    existingTradeNos.size(), tradeNosToCheck.size());
+                log.info("查询到已存在的交易（单号+类型）组合数量：{}，待检查单号数量：{}", 
+                    existingTradeNoTypePairs.size(), tradeNosToCheck.size());
             }
         }
         
@@ -146,19 +146,20 @@ public class BillImportServiceImpl implements BillImportService {
                     log.debug("识别为退款交易，设置为收入类型，tradeNo：{}", billTransaction.getTradeNo());
                 }
                 
-                // 去重检查（基于交易单号）
+                // 去重检查（基于交易单号+类型组合）
                 if (request.getSkipDuplicates() != null && request.getSkipDuplicates()) {
-                    if (billTransaction.getTradeNo() != null && !billTransaction.getTradeNo().isEmpty()) {
+                    if (billTransaction.getTradeNo() != null && !billTransaction.getTradeNo().isEmpty() && billTransaction.getType() != null) {
+                        String tradeNoTypePair = billTransaction.getTradeNo() + "_" + billTransaction.getType();
                         // 检查是否已存在（数据库或本次导入中）
-                        if (existingTradeNos.contains(billTransaction.getTradeNo())) {
-                            // 交易单号已存在，跳过
+                        if (existingTradeNoTypePairs.contains(tradeNoTypePair)) {
+                            // 交易单号和类型组合已存在，跳过
                             skipCount++;
-                            addImportError(result, billTransaction.getTradeNo(), "交易单号重复，需要写入的记录已跳过", billTransaction.getDescription());
-                            log.debug("跳过重复交易，tradeNo：{}", billTransaction.getTradeNo());
+                            addImportError(result, billTransaction.getTradeNo(), "交易单号和类型组合重复，需要写入的记录已跳过", billTransaction.getDescription());
+                            log.debug("跳过重复交易，tradeNo：{}，type：{}", billTransaction.getTradeNo(), billTransaction.getType());
                             continue;
                         } else {
                             // 添加到已处理集合，避免本次导入中重复
-                            existingTradeNos.add(billTransaction.getTradeNo());
+                            existingTradeNoTypePairs.add(tradeNoTypePair);
                         }
                     }
                 }
@@ -182,7 +183,7 @@ public class BillImportServiceImpl implements BillImportService {
                     Category defaultCategory = categories != null ? categories.stream()
                         .filter(c -> "其他".equals(c.getName()))
                         .findFirst()
-                        .orElse(categories != null && !categories.isEmpty() ? categories.get(0) : null)
+                        .orElse(!categories.isEmpty() ? categories.get(0) : null)
                         : null;
                     
                     if (defaultCategory == null) {
