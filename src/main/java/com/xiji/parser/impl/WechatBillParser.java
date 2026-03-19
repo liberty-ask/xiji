@@ -1,5 +1,6 @@
 package com.xiji.parser.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.xiji.entity.dto.response.BillParseResult;
 import com.xiji.parser.BillParser;
 import com.xiji.parser.model.BillTransaction;
@@ -230,7 +231,7 @@ public class WechatBillParser implements BillParser {
         
         // 商品说明/备注（优先使用"商品说明"，其次"商品名称"，最后"备注"）
         String description = getCellValueFromIndexMap(row, columnIndexMap, "商品");
-        if(description.isEmpty() || "/".equals(description)){
+        if(StrUtil.isEmpty(description) || "/".equals(description)){
             description = transaction.getCategory() + "/" + transaction.getCounterparty();
         }
         transaction.setDescription(description);
