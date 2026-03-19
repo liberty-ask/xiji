@@ -206,6 +206,18 @@ public class ExcelUtil {
         if (dateStr == null || dateStr.trim().isEmpty()) {
             return null;
         }
+
+        dateStr = dateStr.trim();
+
+        // 处理 Date.toString() 格式：Thu Mar 19 00:00:00 CST 2025
+        if (dateStr.contains(":") && dateStr.split("\\s+").length >= 6) {
+            try {
+                java.util.Date date = new java.text.SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH).parse(dateStr);
+                return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            } catch (Exception e) {
+                // 继续尝试其他格式
+            }
+        }
         
         // 移除空格
         dateStr = dateStr.trim();

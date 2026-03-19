@@ -91,9 +91,9 @@ public class WechatBillParser implements BillParser {
             }
             
             // Excel格式解析（微信Excel账单从第17行开始才是表头，跳过前16行，索引16）
-            List<String> headers = ExcelUtil.readHeaders(bis, fileType, 16);
+            List<String> headers = ExcelUtil.readHeaders(bis, fileType, 17);
             bis = new ByteArrayInputStream(bytes); // 重新创建流
-            List<Map<Integer, String>> excelRows = ExcelUtil.readDataRows(bis, fileType, 16);
+            List<Map<Integer, String>> excelRows = ExcelUtil.readDataRows(bis, fileType, 17);
             
             // 构建列索引映射（Excel使用）
             Map<String, Integer> columnIndexMap = new HashMap<>();
@@ -104,7 +104,7 @@ public class WechatBillParser implements BillParser {
             // 解析每一行数据
             // Excel格式：使用列索引作为key
             // 微信Excel跳过16行，表头在第17行（索引16），数据从第18行（索引17）开始
-            int excelHeaderRow = 17; // 表头所在行号（从1开始）
+            int excelHeaderRow = 18; // 表头所在行号（从1开始）
             for (int rowIndex = 0; rowIndex < excelRows.size(); rowIndex++) {
                 Map<Integer, String> row = excelRows.get(rowIndex);
                 int actualRowNumber = excelHeaderRow + 1 + rowIndex; // 实际行号 = 表头行 + 1 + 数据索引
@@ -195,10 +195,10 @@ public class WechatBillParser implements BillParser {
         
         // 交易订单号（优先使用"交易订单号"，其次"交易单号"，最后"商户单号"）
         String tradeNo = getCellValueFromIndexMap(row, columnIndexMap, "交易单号");
-        if (tradeNo == null || tradeNo.isEmpty()) {
-            // 如果没有交易订单号，使用交易时间+金额+对方账户生成一个唯一标识
-            String time = getCellValueFromIndexMap(row, columnIndexMap, "交易时间");
-            String amount = getCellValueFromIndexMap(row, columnIndexMap,"金额(元)");
+        // 如果没有交易订单号，使用交易时间+金额+对方账户生成一个唯一标识
+        String time = getCellValueFromIndexMap(row, columnIndexMap, "交易时间");
+        String amount = getCellValueFromIndexMap(row, columnIndexMap,"金额(元)");
+        if (StrUtil.isBlank(tradeNo)) {
             String counterparty = getCellValueFromIndexMap(row, columnIndexMap, "交易对方");
             tradeNo = "wechat_" + (time != null ? time : "") + "_" + (amount != null ? amount : "") + "_" + (counterparty != null ? counterparty : "");
         }
@@ -207,10 +207,10 @@ public class WechatBillParser implements BillParser {
         transaction.setMerchantOrderNo(getCellValueFromIndexMap(row, columnIndexMap, "商户单号"));
         
         // 交易日期（优先使用"交易时间"，其次"支付时间"）
-        transaction.setDate(ExcelUtil.parseDate(getCellValueFromIndexMap(row, columnIndexMap, "交易时间")));
+        transaction.setDate(ExcelUtil.parseDate(time));
         
         // 金额（优先使用"金额"，其次"金额(元)"）
-        transaction.setAmount(ExcelUtil.parseAmount(getCellValueFromIndexMap(row, columnIndexMap, "金额(元)")));
+        transaction.setAmount(ExcelUtil.parseAmount(amount));
         
         // 收/支类型
         String incomeExpense = getCellValueFromIndexMap(row, columnIndexMap, "收/支");
@@ -250,69 +250,6 @@ public class WechatBillParser implements BillParser {
     }
     
     /**
-     * 解析单行数据（从CSV格式的Map，key为列名）
-     */
-    private BillTransaction parseRowFromMap(Map<String, String> row, List<String> headers) {
-        BillTransaction transaction = new BillTransaction();
-        
-        // 交易订单号（优先使用"交易订单号"，其次"交易单号"，最后"商户单号"）
-        String tradeNo = getCellValueFromMap(row, "交易单号");
-        if (tradeNo == null || tradeNo.isEmpty()) {
-            // 如果没有交易订单号，使用交易时间+金额+对方账户生成一个唯一标识
-            String time = getCellValueFromMap(row, "交易时间");
-            String amount = getCellValueFromMap(row, "金额(元)");
-            String counterparty = getCellValueFromMap(row, "交易对方");
-            tradeNo = "wechat_" + (time != null ? time : "") + "_" + (amount != null ? amount : "") + "_" + (counterparty != null ? counterparty : "");
-        }
-        transaction.setTradeNo(tradeNo);
-        
-        // 交易日期（优先使用"交易时间"，其次"支付时间"）
-        String dateStr = getCellValueFromMap(row, "交易时间");
-        transaction.setDate(ExcelUtil.parseDate(dateStr));
-        
-        // 金额（优先使用"金额"，其次"金额(元)"）
-        String amountStr = getCellValueFromMap(row,  "金额(元)");
-        transaction.setAmount(ExcelUtil.parseAmount(amountStr));
-        
-        // 收/支类型
-        String incomeExpense = getCellValueFromMap(row, "收/支");
-        if ("收入".equals(incomeExpense) || "收款".equals(incomeExpense) || "转入".equals(incomeExpense)) {
-            transaction.setType(0);
-        } else if ("支出".equals(incomeExpense) || "付款".equals(incomeExpense) || "转出".equals(incomeExpense)) {
-            transaction.setType(1);
-        } else {
-            // 如果没有明确标识，根据金额正负判断
-            if (transaction.getAmount() != null) {
-                transaction.setType(1); // 默认支出
-            }
-        }
-        
-        // 交易对方
-        transaction.setCounterparty(getCellValueFromMap(row, "交易对方"));
-        
-        // 商品说明/备注（优先使用"商品说明"，其次"商品名称"，最后"备注"）
-        transaction.setDescription(getCellValueFromMap(row,  "商品"));
-        
-        // 支付方式
-        transaction.setPayMethod(getCellValueFromMap(row, "支付方式"));
-        
-        // 交易状态（优先使用"当前状态"，其次"交易状态"）
-        transaction.setStatus(getCellValueFromMap(row, "当前状态"));
-        // 交易类型
-        transaction.setCategory(getCellValueFromMap(row, "交易类型"));
-
-        // 保存原始数据
-        for (String header : headers) {
-            String value = row.get(header);
-            if (value != null) {
-                transaction.getRawData().put(header, value);
-            }
-        }
-        
-        return transaction;
-    }
-    
-    /**
      * 获取单元格值（支持多个可能的列名）- Excel格式
      */
     private String getCellValueFromIndexMap(Map<Integer, String> row, Map<String, Integer> columnIndexMap, String... columnNames) {
@@ -323,19 +260,6 @@ public class WechatBillParser implements BillParser {
                 if (value != null && !value.trim().isEmpty()) {
                     return value.trim();
                 }
-            }
-        }
-        return null;
-    }
-    
-    /**
-     * 获取单元格值（支持多个可能的列名）- CSV格式
-     */
-    private String getCellValueFromMap(Map<String, String> row, String... columnNames) {
-        for (String columnName : columnNames) {
-            String value = row.get(columnName);
-            if (value != null && !value.trim().isEmpty()) {
-                return value.trim();
             }
         }
         return null;
