@@ -381,11 +381,14 @@ public class UserController {
      */
     @OperationLog(description = "用户修改密码")
     @PostMapping("/changePassword")
-    public ResultVo changePassword(@RequestBody UserPassword user) {
-        // 参数验证
-        if (user.getId() == null) {
-            return ResultVo.error("用户ID不能为空");
+    public ResultVo changePassword(@RequestBody UserPassword user, HttpServletRequest request) {
+        // 从JWT token中获取当前用户ID
+        Long currentUserId = getCurrentUserIdFromToken(request);
+        if (currentUserId == null) {
+            return ResultVo.error("用户未登录");
         }
+        
+        // 参数验证
         if (StringUtils.isEmpty(user.getPassword())) {
             return ResultVo.error("旧密码不能为空");
         }
@@ -399,10 +402,11 @@ public class UserController {
             return ResultVo.error("新密码不能与旧密码相同");
         }
         
-        User u = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getId, user.getId()));
+        User u = userService.getById(currentUserId);
         if (u == null) {
             return ResultVo.error("用户不存在");
         }
+        
         // 使用BCrypt验证旧密码
         if (!PasswordUtils.matches(user.getPassword(), u.getPassword())) {
             return ResultVo.error("旧密码错误");
@@ -417,6 +421,48 @@ public class UserController {
         }else {
             return ResultVo.error("修改失败");
         }
+    }
+    
+    /**
+     * 从请求中获取当前用户ID
+     */
+    private Long getCurrentUserIdFromToken(HttpServletRequest request) {
+        String token = request.getHeader("token");
+        if (token == null || token.isEmpty()) {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7);
+            }
+        }
+
+        if (token == null || token.isEmpty()) {
+            return null;
+        }
+
+        io.jsonwebtoken.Claims claims = JwtUtils.parseJwt(token);
+        if (claims == null) {
+            return null;
+        }
+
+        Object idObj = claims.get("id");
+        if (idObj == null) {
+            return null;
+        }
+
+        if (idObj instanceof Long) {
+            return (Long) idObj;
+        } else if (idObj instanceof Number) {
+            return ((Number) idObj).longValue();
+        } else if (idObj instanceof String) {
+            try {
+                return Long.parseLong((String) idObj);
+            } catch (NumberFormatException e) {
+                log.warn("无法解析用户ID: {}", idObj);
+                return null;
+            }
+        }
+
+        return null;
     }
 
     /**

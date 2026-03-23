@@ -125,7 +125,7 @@ public class FileUploadValidator {
         }
         
         String originalFileName = file.getOriginalFilename();
-        if (originalFileName == null || originalFileName.trim().isEmpty()) {
+        if (originalFileName.trim().isEmpty()) {
             return "文件名不能为空";
         }
         
@@ -156,7 +156,7 @@ public class FileUploadValidator {
         
         // 检查MIME类型（如果可能被伪造，这里作为辅助验证）
         String contentType = file.getContentType();
-        if (contentType != null && !isValidMimeType(contentType, extension)) {
+        if (!isValidMimeType(contentType, extension)) {
             log.warn("文件MIME类型不匹配：文件名={}, 声明类型={}, 扩展名={}", originalFileName, contentType, extension);
             // 不直接拒绝，因为MIME类型可能不准确，只记录警告
         }

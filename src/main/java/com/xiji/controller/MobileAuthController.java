@@ -19,12 +19,15 @@ import com.xiji.service.SmsService.SmsSendResult;
 import com.xiji.service.UserService;
 import com.xiji.utils.AvatarUtils;
 import com.xiji.utils.JwtUtils;
+import com.xiji.utils.LoginAttemptUtils;
 import com.xiji.utils.PasswordUtils;
 import com.xiji.utils.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
@@ -44,6 +47,7 @@ public class MobileAuthController {
     private final SmsService smsService;
     private final FamilyService familyService;
     private final FamilyMemberService familyMemberService;
+    private final LoginAttemptUtils loginAttemptUtils;
 
     /**
      * 发送登录验证码
@@ -87,6 +91,7 @@ public class MobileAuthController {
     public ResultVo login(@RequestBody MobileLoginRequest request) {
         String mode = StringUtils.isNotEmpty(request.getMode()) ? request.getMode() : "password";
         User user = null;
+        String loginIdentifier = null;
         
         if ("code".equals(mode)) {
             // 验证码登录
@@ -96,25 +101,50 @@ public class MobileAuthController {
             if (!ValidationUtils.isValidPhone(request.getPhone())) {
                 return ResultVo.error("手机号格式不正确");
             }
+            loginIdentifier = request.getPhone();
+            
+            // 检查登录失败次数（防止暴力破解）
+            if (loginAttemptUtils.isLoginBlocked(loginIdentifier)) {
+                Long remainingTime = loginAttemptUtils.getRemainingLockTime(loginIdentifier);
+                long minutes = remainingTime > 0 ? (remainingTime / 60) + 1 : 1;
+                return ResultVo.error("登录失败次数过多，请" + minutes + "分钟后再试");
+            }
+            
             if (StringUtils.isEmpty(request.getCode())) {
                 return ResultVo.error("验证码不能为空");
             }
             
             // 验证短信验证码
             if (!smsService.verifySmsCode(request.getPhone(), request.getCode(), "login")) {
+                // 验证码错误，记录失败次数
+                loginAttemptUtils.recordLoginFailure(loginIdentifier);
                 return ResultVo.error("验证码错误或已过期");
             }
             
             // 根据手机号查询用户
             user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getPhone, request.getPhone()));
             if (user == null) {
+                // 用户不存在也记录失败（防止手机号枚举攻击）
+                loginAttemptUtils.recordLoginFailure(loginIdentifier);
                 return ResultVo.error("该手机号未注册");
             }
+            
+            // 登录成功，清除失败记录
+            loginAttemptUtils.clearLoginFailure(loginIdentifier);
         } else {
             // 密码登录
             if (StringUtils.isEmpty(request.getAccount())) {
                 return ResultVo.error("账号不能为空");
             }
+            loginIdentifier = request.getAccount();
+            
+            // 检查登录失败次数（防止暴力破解）
+            if (loginAttemptUtils.isLoginBlocked(loginIdentifier)) {
+                Long remainingTime = loginAttemptUtils.getRemainingLockTime(loginIdentifier);
+                long minutes = remainingTime > 0 ? (remainingTime / 60) + 1 : 1;
+                return ResultVo.error("登录失败次数过多，请" + minutes + "分钟后再试");
+            }
+            
             if (StringUtils.isEmpty(request.getPassword())) {
                 return ResultVo.error("密码不能为空");
             }
@@ -127,13 +157,20 @@ public class MobileAuthController {
                 .or()
                 .eq(User::getName, request.getAccount()));
             if (user == null) {
+                // 用户不存在也记录失败（防止账号枚举攻击）
+                loginAttemptUtils.recordLoginFailure(loginIdentifier);
                 return ResultVo.error("用户不存在");
             }
             
             // 验证密码
             if (!PasswordUtils.matches(request.getPassword(), user.getPassword())) {
+                // 密码错误，记录失败次数
+                loginAttemptUtils.recordLoginFailure(loginIdentifier);
                 return ResultVo.error("密码错误");
             }
+            
+            // 登录成功，清除失败记录
+            loginAttemptUtils.clearLoginFailure(loginIdentifier);
         }
         
         // 检查用户状态
@@ -212,6 +249,7 @@ public class MobileAuthController {
      * POST /register
      */
     @PostMapping("/register")
+    @Transactional(rollbackFor = Exception.class)
     public ResultVo register(@Valid @RequestBody MobileRegisterRequest request) {
         if (!PhoneUtil.isPhone(request.getPhone())) {
             return ResultVo.error("手机号格式不正确");
@@ -224,33 +262,34 @@ public class MobileAuthController {
         if (userService.getOne(new LambdaQueryWrapper<User>().eq(User::getPhone, request.getPhone())) != null) {
             return ResultVo.error("该手机号已被注册");
         }
-        // 创建用户
-        User user = new User();
-        user.setUsername(request.getPhone()); // 使用手机号作为用户名
-        user.setName(request.getNickname());
-        user.setPhone(request.getPhone());
-        user.setPassword(PasswordUtils.encode(request.getPassword()));
-        user.setStatus(0); // 默认正常状态
-        // 创建时间和更新时间由MyBatis-Plus自动填充
-        if (userService.save(user)) {
+        
+        try {
+            // 创建用户
+            User user = new User();
+            user.setUsername(request.getPhone()); // 使用手机号作为用户名
+            user.setName(request.getNickname());
+            user.setPhone(request.getPhone());
+            user.setPassword(PasswordUtils.encode(request.getPassword()));
+            user.setStatus(0); // 默认正常状态
+            // 创建时间和更新时间由MyBatis-Plus自动填充
+            if (!userService.save(user)) {
+                return ResultVo.error("注册失败");
+            }
+            
             // 注册成功后，自动创建家庭
             Long familyId = null;
             int role = 0; // 默认普通成员
-            try {
-                String familyName = request.getNickname() + "的家庭";
-                Family family = familyService.createFamily(familyName, user.getId());
-                familyId = family.getId();
-                // 将用户加入家庭（通过family_member表），创建者自动成为管理员
-                familyMemberService.addMemberToFamily(familyId, user.getId(), 1);
-                role = 1; // 创建者自动成为管理员
-                // 设置当前选择的家庭
-                user.setCurrentFamilyId(familyId);
-                userService.updateById(user);
-                log.info("用户注册成功并创建家庭，用户ID={}，家庭ID={}", user.getId(), familyId);
-            } catch (Exception e) {
-                log.error("创建家庭失败，用户ID={}", user.getId(), e);
-                // 家庭创建失败不影响注册，用户可以后续申请加入其他家庭
-            }
+            
+            String familyName = request.getNickname() + "的家庭";
+            Family family = familyService.createFamily(familyName, user.getId());
+            familyId = family.getId();
+            // 将用户加入家庭（通过family_member表），创建者自动成为管理员
+            familyMemberService.addMemberToFamily(familyId, user.getId(), 1);
+            role = 1; // 创建者自动成为管理员
+            // 设置当前选择的家庭
+            user.setCurrentFamilyId(familyId);
+            userService.updateById(user);
+            log.info("用户注册成功并创建家庭，用户ID={}，家庭ID={}", user.getId(), familyId);
             
             // 生成JWT Token（不再包含role，权限检查时从家庭成员表获取）
             Map<String, Object> claims = new HashMap<>();
@@ -271,8 +310,12 @@ public class MobileAuthController {
             response.setUser(userResponse);
             
             return ResultVo.success("注册成功", response);
-        } else {
-            return ResultVo.error("注册失败");
+        } catch (Exception e) {
+            log.error("用户注册失败，手机号={}", request.getPhone(), e);
+            // 手动标记事务回滚
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            // 返回统一格式的错误信息
+            return ResultVo.error("注册失败：" + e.getMessage());
         }
     }
 

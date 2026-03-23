@@ -37,7 +37,6 @@ public class LoginCheckFilter implements Filter {
         "/v3/api-docs",
         "/v3/api-docs/",
         "/webjars",
-        "/api/v1/upload",
         "/error"  // 错误页面
     };
     

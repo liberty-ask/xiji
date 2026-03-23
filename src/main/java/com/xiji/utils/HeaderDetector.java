@@ -226,7 +226,8 @@ public class HeaderDetector {
                 return String.valueOf(cell.getBooleanCellValue());
             case FORMULA:
                 try {
-                    return getCellValueAsString(cell);
+                    DataFormatter formatter = new DataFormatter();
+                    return formatter.formatCellValue(cell);
                 } catch (Exception e) {
                     return cell.getCellFormula();
                 }

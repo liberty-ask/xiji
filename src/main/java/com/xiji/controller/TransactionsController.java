@@ -84,7 +84,21 @@ public class TransactionsController extends BaseController {
     @OperationLog(description = "删除收支记录")
     @DeleteMapping("/{id}")
     @Transactional(rollbackFor = Exception.class)
-    public ResultVo delete(@PathVariable Long id) {
+    public ResultVo delete(@PathVariable Long id, HttpServletRequest httpRequest) {
+        Long userId = getCurrentUserId(httpRequest);
+        if (userId == null) {
+            return ResultVo.error("用户未登录");
+        }
+
+        // 查询交易记录
+        Transactions transaction = transactionsService.getById(id);
+        if (transaction == null) {
+            return ResultVo.error("交易记录不存在");
+        }
+        // 权限校验：只能删除自己创建的记录
+        if (!userId.equals(transaction.getCreatedBy())) {
+            return ResultVo.error("只能删除自己创建的记录");
+        }
         // 删除交易记录
         if (!transactionsService.removeById(id)) {
             return ResultVo.error("删除交易记录失败");
@@ -118,13 +132,27 @@ public class TransactionsController extends BaseController {
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
-        
-        // 查询原始交易记录
-        Transactions oldTransactions = transactionsService.getById(transaction.getId());
-        if (oldTransactions == null) {
-            return ResultVo.error("交易记录不存在");
+
+        // 获取当前选择的家庭ID
+        Long familyId = getCurrentFamilyId(userId);
+        if (familyId == null) {
+            return ResultVo.error("请先选择家庭");
         }
         
+        // 查询原始交易记录
+        Transactions oldTransaction = transactionsService.getById(transaction.getId());
+        if (oldTransaction == null) {
+            return ResultVo.error("交易记录不存在");
+        }
+        // 权限校验：只能修改自己创建的记录
+        if (!userId.equals(oldTransaction.getCreatedBy())) {
+            return ResultVo.error("只能修改自己创建的记录");
+        }
+
+        // 验证交易记录是否属于当前家庭
+        if (!familyId.equals(oldTransaction.getFamilyId())) {
+            return ResultVo.error("交易记录不属于当前家庭");
+        }
         // 设置更新人
         transaction.setUpdatedBy(userId);
         log.info("update transaction: id={}", transaction.getId());
