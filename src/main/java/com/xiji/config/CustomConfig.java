@@ -29,6 +29,9 @@ public class CustomConfig {
     // 智谱AI配置
     private ZhipuAiConfig zhipuAi = new ZhipuAiConfig();
     
+    // CORS配置
+    private CorsConfig cors = new CorsConfig();
+    
     @Data
     public static class JwtConfig {
         private String signKey;
@@ -83,6 +86,20 @@ public class CustomConfig {
         private String apiKey;
         // 模型名称（默认使用glm-4-flash）
         private String model = "glm-4-flash";
+    }
+    
+    @Data
+    public static class CorsConfig {
+        // 允许的源，多个源用逗号分隔
+        private String allowedOrigins = "http://localhost:3000";
+        // 是否允许凭证
+        private Boolean allowCredentials = true;
+        // 允许的HTTP方法
+        private String allowedMethods = "*";
+        // 允许的请求头
+        private String allowedHeaders = "*";
+        // 暴露的响应头
+        private String exposedHeaders = "*";
     }
     
 }
