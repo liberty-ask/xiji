@@ -5,6 +5,7 @@ import com.xiji.parser.BillParser;
 import com.xiji.parser.model.BillTransaction;
 import com.xiji.utils.ExcelUtil;
 import com.xiji.utils.CsvUtil;
+import com.xiji.utils.HeaderDetector;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -91,16 +92,35 @@ public class AlipayBillParser implements BillParser {
                 return result;
             }
             
-            // CSV格式解析（支付宝CSV账单从第25行开始才是表头，跳过前24行），使用GBK编码
-            Charset gbkCharset = Charset.forName("GBK");
-            List<String> headers = CsvUtil.readHeaders(bis, 24, gbkCharset);
-            bis = new ByteArrayInputStream(bytes); // 重新创建流
-            List<Map<String, String>> csvRows = CsvUtil.readDataRows(bis, 24, gbkCharset);
+            // 自动识别表头位置
+            int headerRowIndex = HeaderDetector.detectHeaderRow(new ByteArrayInputStream(bytes), fileType, getPlatformCode());
+            if (headerRowIndex == -1) {
+                addError(result, 0, "无法识别支付宝账单表头", null);
+                return result;
+            }
+            
+            // 读取表头和数据（尝试不同编码）
+            List<String> headers = null;
+            List<Map<String, String>> csvRows = null;
+            Charset charset = Charset.forName("GBK");
+
+            try {
+                bis = new ByteArrayInputStream(bytes);
+                headers = CsvUtil.readHeaders(bis, headerRowIndex, charset);
+                bis = new ByteArrayInputStream(bytes);
+                csvRows = CsvUtil.readDataRows(bis, headerRowIndex, charset);
+            } catch (Exception e) {
+                // 编码错误，尝试下一种编码
+            }
+            
+            if (headers == null || headers.isEmpty()) {
+                addError(result, 0, "无法读取表头", null);
+                return result;
+            }
             
             // 解析每一行数据
             // CSV格式：使用列名作为key
-            // 支付宝CSV跳过24行，表头在第25行，数据从第26行开始
-            int csvHeaderRow = 25; // 表头所在行号（从1开始）
+            int csvHeaderRow = headerRowIndex + 1; // 表头所在行号（从1开始）
             for (int rowIndex = 0; rowIndex < csvRows.size(); rowIndex++) {
                 Map<String, String> row = csvRows.get(rowIndex);
                 int actualRowNumber = csvHeaderRow + 1 + rowIndex; // 实际行号 = 表头行 + 1 + 数据索引

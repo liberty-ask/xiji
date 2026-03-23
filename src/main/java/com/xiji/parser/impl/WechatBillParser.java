@@ -5,14 +5,13 @@ import com.xiji.entity.dto.response.BillParseResult;
 import com.xiji.parser.BillParser;
 import com.xiji.parser.model.BillTransaction;
 import com.xiji.utils.ExcelUtil;
-import com.xiji.utils.CsvUtil;
+import com.xiji.utils.HeaderDetector;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -90,10 +89,18 @@ public class WechatBillParser implements BillParser {
                 return result;
             }
             
-            // Excel格式解析（微信Excel账单从第17行开始才是表头，跳过前16行，索引16）
-            List<String> headers = ExcelUtil.readHeaders(bis, fileType, 17);
+            // 自动识别表头位置
+            int headerRowIndex = HeaderDetector.detectHeaderRow(new ByteArrayInputStream(bytes), fileType, getPlatformCode());
+            if (headerRowIndex == -1) {
+                addError(result, 0, "无法识别微信账单表头", null);
+                return result;
+            }
+            
+            // 读取表头和数据
+            bis = new ByteArrayInputStream(bytes);
+            List<String> headers = ExcelUtil.readHeaders(bis, fileType, headerRowIndex);
             bis = new ByteArrayInputStream(bytes); // 重新创建流
-            List<Map<Integer, String>> excelRows = ExcelUtil.readDataRows(bis, fileType, 17);
+            List<Map<Integer, String>> excelRows = ExcelUtil.readDataRows(bis, fileType, headerRowIndex);
             
             // 构建列索引映射（Excel使用）
             Map<String, Integer> columnIndexMap = new HashMap<>();
@@ -103,8 +110,7 @@ public class WechatBillParser implements BillParser {
             
             // 解析每一行数据
             // Excel格式：使用列索引作为key
-            // 微信Excel跳过16行，表头在第17行（索引16），数据从第18行（索引17）开始
-            int excelHeaderRow = 18; // 表头所在行号（从1开始）
+            int excelHeaderRow = headerRowIndex + 1; // 表头所在行号（从1开始）
             for (int rowIndex = 0; rowIndex < excelRows.size(); rowIndex++) {
                 Map<Integer, String> row = excelRows.get(rowIndex);
                 int actualRowNumber = excelHeaderRow + 1 + rowIndex; // 实际行号 = 表头行 + 1 + 数据索引

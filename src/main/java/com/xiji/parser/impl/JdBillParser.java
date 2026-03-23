@@ -5,6 +5,7 @@ import com.xiji.parser.BillParser;
 import com.xiji.parser.model.BillTransaction;
 import com.xiji.utils.ExcelUtil;
 import com.xiji.utils.CsvUtil;
+import com.xiji.utils.HeaderDetector;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -109,23 +110,30 @@ public class JdBillParser implements BillParser {
             byte[] bytes = inputStream.readAllBytes();
             ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
             
+            // 自动识别表头位置
+            int headerRowIndex = HeaderDetector.detectHeaderRow(new ByteArrayInputStream(bytes), fileType, getPlatformCode());
+            if (headerRowIndex == -1) {
+                addError(result, 0, "无法识别京东账单表头", null);
+                return result;
+            }
+            
             // 尝试读取表头和数据（先尝试UTF-8，失败则尝试GBK）
             List<String> headers = null;
             List<Map<String, String>> csvRows = null;
             Charset charset = StandardCharsets.UTF_8;
             
             try {
-                headers = CsvUtil.readHeaders(bis, HEADER_ROW_INDEX, charset);
+                headers = CsvUtil.readHeaders(bis, headerRowIndex, charset);
                 bis = new ByteArrayInputStream(bytes); // 重新创建流
-                csvRows = CsvUtil.readDataRows(bis, HEADER_ROW_INDEX, charset);
+                csvRows = CsvUtil.readDataRows(bis, headerRowIndex, charset);
             } catch (Exception e) {
                 // 如果UTF-8失败，尝试GBK编码
                 log.info("使用UTF-8编码读取失败，尝试GBK编码");
                 charset = Charset.forName("GBK");
                 bis = new ByteArrayInputStream(bytes);
-                headers = CsvUtil.readHeaders(bis, HEADER_ROW_INDEX, charset);
+                headers = CsvUtil.readHeaders(bis, headerRowIndex, charset);
                 bis = new ByteArrayInputStream(bytes);
-                csvRows = CsvUtil.readDataRows(bis, HEADER_ROW_INDEX, charset);
+                csvRows = CsvUtil.readDataRows(bis, headerRowIndex, charset);
             }
             
             if (headers == null || headers.isEmpty()) {
@@ -134,8 +142,7 @@ public class JdBillParser implements BillParser {
             }
             
             // 解析每一行数据
-            // 京东账单表头在第22行（从1开始计数），数据从第23行开始
-            int csvHeaderRow = 22; // 表头所在行号（从1开始）
+            int csvHeaderRow = headerRowIndex + 1; // 表头所在行号（从1开始）
             for (int rowIndex = 0; rowIndex < csvRows.size(); rowIndex++) {
                 Map<String, String> row = csvRows.get(rowIndex);
                 int actualRowNumber = csvHeaderRow + 1 + rowIndex; // 实际行号 = 表头行 + 1 + 数据索引
