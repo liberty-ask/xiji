@@ -81,7 +81,12 @@ public class HomeResponse {
          * 时间（HH:mm格式）
          */
         private String time;
-        
+
+        /**
+         * 日期（yyyy-MM-dd格式）
+         */
+        private String date;
+
         /**
          * 金额（字符串，带+/-号）
          */

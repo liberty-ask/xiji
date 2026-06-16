@@ -305,13 +305,18 @@ public class HomeController extends BaseController {
             // 时间（HH:mm格式）
             LocalDateTime createdAt = transaction.getCreatedAt();
             if (createdAt != null) {
-                item.setTime(createdAt.format(DateTimeFormatter.ofPattern("HH:mm")));
+                item.setTime(createdAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
             } else if (transaction.getDate() != null) {
-                item.setTime(LocalTime.of(0, 0).format(DateTimeFormatter.ofPattern("HH:mm")));
+                item.setTime(LocalTime.of(0, 0).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
             } else {
                 item.setTime("00:00");
             }
-            
+            LocalDate transactionDate = transaction.getDate();
+            if ( transactionDate != null) {
+                item.setDate(transactionDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+                item.setTime(transactionDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+            }
+
             // 金额（带+/-号）
             boolean isIncome = transaction.getType() != null && transaction.getType() == 0;
             item.setIsIncome(isIncome);
