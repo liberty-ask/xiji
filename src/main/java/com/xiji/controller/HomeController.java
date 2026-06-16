@@ -314,7 +314,6 @@ public class HomeController extends BaseController {
             LocalDate transactionDate = transaction.getDate();
             if ( transactionDate != null) {
                 item.setDate(transactionDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-                item.setTime(transactionDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
             }
 
             // 金额（带+/-号）
