@@ -50,7 +50,7 @@ public class LoginAttemptUtils {
             redisUtils.expire(key, LOCK_TIME);
         }
         
-        log.warn("登录失败记录，用户：{}，失败次数：{}", identifier, attempts);
+        log.warn("登录失败记录，identifier={}，attempts={}", maskIdentifier(identifier), attempts);
     }
 
     /**
@@ -60,7 +60,7 @@ public class LoginAttemptUtils {
     public void clearLoginFailure(String identifier) {
         String key = getLoginAttemptKey(identifier);
         redisUtils.delete(key);
-        log.debug("清除登录失败记录，用户：{}", identifier);
+        log.debug("清除登录失败记录，identifier={}", maskIdentifier(identifier));
     }
 
     /**
@@ -79,8 +79,8 @@ public class LoginAttemptUtils {
         boolean blocked = attempts >= MAX_ATTEMPTS;
         if (blocked) {
             Long remainingTime = redisUtils.getExpire(key);
-            log.warn("登录被锁定，用户：{}，失败次数：{}，剩余锁定时间：{}秒", 
-                identifier, attempts, remainingTime);
+            log.warn("登录被锁定，identifier={}，attempts={}，remainingSeconds={}",
+                maskIdentifier(identifier), attempts, remainingTime);
         }
         
         return blocked;
@@ -96,8 +96,8 @@ public class LoginAttemptUtils {
         Long expire = redisUtils.getExpire(key);
         return expire != null && expire > 0 ? expire : -1;
     }
+
+    private String maskIdentifier(String identifier) {
+        return ValidationUtils.maskPhone(identifier);
+    }
 }
-
-
-
-

@@ -5,8 +5,6 @@ import com.xiji.entity.domain.Transactions;
 import com.xiji.entity.domain.Category;
 import com.xiji.entity.domain.User;
 import com.xiji.entity.domain.Budget;
-import com.xiji.entity.dto.response.StatisticsTotalResponse;
-import com.xiji.entity.dto.response.CategoryRankResponse;
 import com.xiji.entity.dto.response.HomeResponse;
 import com.xiji.service.TransactionsService;
 import com.xiji.service.BudgetService;
@@ -46,123 +44,6 @@ public class HomeController extends BaseController {
     private final BudgetService budgetService;
     private final CategoryService categoryService;
     private final UserService userService;
-
-    /**
-     * 统计本月家庭收入和支出
-     */
-    @GetMapping("/home/count/total")
-    public ResultVo incomeExpense(HttpServletRequest request) {
-        Long userId = getCurrentUserId(request);
-        if (userId == null) {
-            return ResultVo.error("用户未登录");
-        }
-
-        Long familyId = getCurrentFamilyId(userId);
-        if (familyId == null) {
-            return ResultVo.error("请先选择家庭");
-        }
-
-        LambdaQueryWrapper<Transactions> queryWrapper = new LambdaQueryWrapper<>();
-        // 根据当前用户的当前家庭过滤
-        queryWrapper.eq(Transactions::getFamilyId, familyId);
-        // 获取当前日期
-        LocalDate now = LocalDate.now(ZoneId.systemDefault());
-        // 获取当前月份
-        YearMonth currentYearMonth = YearMonth.from(now);
-        // 获取本月的第一天
-        LocalDate firstDayOfMonth = currentYearMonth.atDay(1);
-        // 获取本月的最后一天
-        LocalDate lastDayOfMonth = currentYearMonth.atEndOfMonth();
-        log.info("当前{}",firstDayOfMonth);
-        // 构建查询
-        queryWrapper.ge(Transactions::getDate,firstDayOfMonth)
-                .le(Transactions::getDate,lastDayOfMonth);
-        // 查询
-        List<Transactions> transactions = transactionsService.list(queryWrapper);
-        log.info("列表{}",transactions);
-        // 统计收入条数
-        int countType0 = (int) transactions.stream()
-                .filter(t -> t.getType() == 0)
-                .count();
-        BigDecimal totalAmountType0 = transactions.stream()
-                .filter(t -> t.getType() == 0)
-                .map(Transactions::getAmount)
-                .filter(amount -> amount != null)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        log.info("type为0的条数: {},总金额: {}", countType0, totalAmountType0);
-        // 统计支出条数
-        int countType1 = (int) transactions.stream()
-                .filter(t -> t.getType() == 1)
-                .count();
-        BigDecimal totalAmountType1 = transactions.stream()
-                .filter(t -> t.getType() == 1)
-                .map(Transactions::getAmount)
-                .filter(amount -> amount != null)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        log.info("type为1的条数：{},总金额：{}",countType1,totalAmountType1);
-        // 构建返回结果
-        StatisticsTotalResponse response = new StatisticsTotalResponse();
-        response.setTotalIncome(totalAmountType0);
-        response.setTotalExpense(totalAmountType1);
-        response.setIncomeCount(countType0);
-        response.setExpenseCount(countType1);
-        return ResultVo.success(response);
-    }
-
-
-    /**
-     * 统计收入和支出排行榜
-     */
-    @GetMapping("/home/count/rank")
-    public ResultVo rank(HttpServletRequest request) {
-        Long userId = getCurrentUserId(request);
-        if (userId == null) {
-            return ResultVo.error("用户未登录");
-        }
-
-        Long familyId = getCurrentFamilyId(userId);
-        if (familyId == null) {
-            return ResultVo.error("请先选择家庭");
-        }
-
-        // 查询本月的记录
-        LambdaQueryWrapper<Transactions> queryWrapper = new LambdaQueryWrapper<>();
-        // 根据当前用户的当前家庭过滤
-        queryWrapper.eq(Transactions::getFamilyId, familyId);
-        // 获取当前日期
-        LocalDate now = LocalDate.now(ZoneId.systemDefault());
-        // 获取当前月份
-        YearMonth currentYearMonth = YearMonth.from(now);
-        // 获取本月的第一天
-        LocalDate firstDayOfMonth = currentYearMonth.atDay(1);
-        // 获取本月的最后一天
-        LocalDate lastDayOfMonth = currentYearMonth.atEndOfMonth();
-        log.info("当前{}",firstDayOfMonth);
-        // 构建查询
-        queryWrapper.ge(Transactions::getDate,firstDayOfMonth)
-                .le(Transactions::getDate,lastDayOfMonth);
-        // 查询
-        List<Transactions> transactions = transactionsService.list(queryWrapper);
-        log.info("列表{}",transactions);
-        // 统计每个分类的收入和支出
-        // 收入
-        Map<Long, BigDecimal> incomeMap = new HashMap<>();
-        transactions.stream()
-                .filter(t -> t.getType() == 0 && t.getCategoryId() != null && t.getAmount() != null)
-                .forEach(t -> incomeMap.merge(t.getCategoryId(), t.getAmount(), BigDecimal::add));
-        log.info("收入{}",incomeMap);
-        // 支出
-        Map<Long, BigDecimal> expenseMap = new HashMap<>();
-        transactions.stream()
-                .filter(t -> t.getType() == 1 && t.getCategoryId() != null && t.getAmount() != null)
-                .forEach(t -> expenseMap.merge(t.getCategoryId(), t.getAmount(), BigDecimal::add));
-        log.info("支出{}",expenseMap);
-        // 构建返回结果
-        CategoryRankResponse response = new CategoryRankResponse();
-        response.setCategoryIncome(incomeMap);
-        response.setCategoryExpense(expenseMap);
-        return ResultVo.success(response);
-    }
 
     /**
      * 获取首页数据

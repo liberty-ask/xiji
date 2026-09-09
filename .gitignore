@@ -44,3 +44,6 @@ build/
 ### 启动脚本 ###
 start.sh
 start.bat
+
+### 日志 ###
+logs/

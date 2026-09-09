@@ -26,7 +26,7 @@ GitHub 为源仓库；Gitee 为同步镜像，内容以 GitHub 为准。
 - **认证**：手机号注册 / 登录 / 忘记密码；测试环境可不发短信，验证码直接返回前端
 - **家庭**：注册成功后自动创建第一个家庭；邀请码、扫码申请、审核、成员、退出、多家庭切换
 - **记账**：账单增删改查；语音文本由智谱 AI 解析为分类与金额
-- **账单导入**：微信 xlsx/xls、支付宝 csv、京东 csv；异步解析与导入（招行解析器入口已关闭）
+- **账单导入**：微信 xlsx/xls、支付宝 csv、京东 csv；异步解析与导入
 - **分类、统计、日历、月度预算**
 - **文件**：头像等上传至阿里云 OSS
 
@@ -88,32 +88,19 @@ CREATE DATABASE family_financial DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_u
 
 开发用 [`src/main/resources/application-test.yml`](src/main/resources/application-test.yml)，生产用 [`application-active.yml`](src/main/resources/application-active.yml)。敏感项走环境变量，不要把密钥写进仓库。
 
+复制 [`.env.example`](.env.example) 为 `.env` 后按注释填写。Spring Boot 不会自动加载 `.env`，启动前请导入环境变量，或在 IDE 运行配置中填写。
+
 | 变量 | 说明 |
 | --- | --- |
 | `DB_HOST` `DB_PORT` `DB_NAME` `DB_USERNAME` `DB_PASSWORD` | MySQL |
 | `REDIS_HOST` `REDIS_PORT` `REDIS_PASSWORD` `REDIS_DATABASE` | Redis |
-| `JWT_SIGN_KEY` | JWT 签名密钥 |
+| `JWT_SIGN_KEY` | JWT 签名密钥，建议不少于 32 字符 |
 | `ALIYUN_OSS_ENDPOINT` `ALIYUN_OSS_ACCESS_KEY_ID` `ALIYUN_OSS_ACCESS_KEY_SECRET` `ALIYUN_OSS_BUCKET_NAME` `ALIYUN_OSS_CUSTOM_DOMAIN` `ALIYUN_OSS_FOLDER` | 对象存储 |
 | `ZHIPU_AI_API_KEY` `ZHIPU_AI_MODEL` | 智谱（语音解析、导入分类） |
 | `CORS_ALLOWED_ORIGINS` | 允许的前端来源 |
+| `SMS_ENABLE` `ALIYUN_SMS_ACCESS_KEY_ID` `ALIYUN_SMS_ACCESS_KEY_SECRET` `ALIYUN_SMS_SIGN_NAME` `ALIYUN_SMS_TEMPLATE_CODE` | 短信（仅 active profile） |
 
 测试 profile 中短信默认关闭（`custom.sms.enable: false`），验证码会返回给客户端，便于本地调试。
-
-Windows PowerShell 示例：
-
-```powershell
-$env:DB_HOST="127.0.0.1"
-$env:DB_PORT="3306"
-$env:DB_NAME="family_financial"
-$env:DB_USERNAME="root"
-$env:DB_PASSWORD="your_password"
-$env:REDIS_HOST="127.0.0.1"
-$env:REDIS_PORT="6379"
-$env:REDIS_PASSWORD=""
-$env:REDIS_DATABASE="0"
-$env:JWT_SIGN_KEY="replace-with-a-long-secret"
-$env:CORS_ALLOWED_ORIGINS="*"
-```
 
 OSS 与智谱密钥按你实际账号填写。未配置时，头像上传和 AI 解析相关接口会失败，记账主流程仍可联调。
 
@@ -131,6 +118,8 @@ java -jar target/xiji-1.0.0.jar --spring.profiles.active=test
 ```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=test
 ```
+
+日志由 [`logback-spring.xml`](src/main/resources/logback-spring.xml) 管理：test 只打控制台；active 同时写入 `logs/xiji.log`（按天和大小滚动，目录可用环境变量 `LOG_PATH` 修改）。
 
 ### API 文档
 

@@ -78,7 +78,7 @@ public class BillImportServiceImpl implements BillImportService {
         // 如果有需要AI归类的交易，批量调用AI服务
         if (!transactionsNeedAi.isEmpty() && request.getAutoMatchCategory() != null && request.getAutoMatchCategory()) {
             try {
-                log.info("开始AI归类，需要归类的交易数量：{}", transactionsNeedAi.size());
+                log.info("开始AI归类，needCount={}", transactionsNeedAi.size());
                 List<BillCategoryAiResult> aiResults = billCategoryAiService.categorizeTransactions(
                         transactionsNeedAi, incomeCategories, expenseCategories);
                 
@@ -91,12 +91,12 @@ public class BillImportServiceImpl implements BillImportService {
                             // 使用AI返回的分类
                             String originalCategory = transaction.getCategory();
                             transaction.setCategory(aiResult.getCategory());
-                            log.debug("AI归类成功，索引：{}，原始分类：{}，AI分类：{}，置信度：{}",
+                            log.debug("AI归类成功，index={}，originalCategory={}，aiCategory={}，confidence={}",
                                     index, originalCategory, aiResult.getCategory(), aiResult.getConfidence());
                         }
                     }
                 }
-                log.info("AI归类完成，成功归类：{}条", aiResults.size());
+                log.info("AI归类完成，successCount={}", aiResults.size());
             } catch (Exception e) {
                 log.error("AI归类失败，将使用默认分类", e);
                 // AI归类失败不影响导入，继续使用原有逻辑
@@ -126,7 +126,7 @@ public class BillImportServiceImpl implements BillImportService {
                     .map(t -> t.getTradeNo() + "_" + t.getType() + "_" + t.getMerchantOrderNo())
                     .collect(Collectors.toSet());
                 
-                log.info("查询到已存在的交易（单号+类型）组合数量：{}，待检查单号数量：{}", 
+                log.info("查询到已存在的交易组合，existingCount={}，checkCount={}", 
                     existingTradeNoTypePairs.size(), tradeNosToCheck.size());
             }
         }
@@ -144,7 +144,7 @@ public class BillImportServiceImpl implements BillImportService {
                 // 如果是退款记录，无论解析器设置的类型是什么，都设置为收入类型
                 if (isRefund) {
                     billTransaction.setType(0); // 退款作为收入类型
-                    log.debug("识别为退款交易，设置为收入类型，tradeNo：{}", billTransaction.getTradeNo());
+                    log.debug("识别为退款交易，设置为收入类型，tradeNo={}", billTransaction.getTradeNo());
                 }
                 
                 // 去重检查（基于交易单号+类型+商家订单号组合）
@@ -156,7 +156,7 @@ public class BillImportServiceImpl implements BillImportService {
                             // 交易单号、类型、商家订单号组合已存在，跳过
                             skipCount++;
                             addImportError(result, billTransaction.getTradeNo(), "交易单号、类型、商家订单号组合重复，需要写入的记录已跳过", billTransaction.getDescription());
-                            log.debug("跳过重复交易，tradeNo：{}，type：{}", billTransaction.getTradeNo(), billTransaction.getType());
+                            log.debug("跳过重复交易，tradeNo={}，type={}", billTransaction.getTradeNo(), billTransaction.getType());
                             continue;
                         } else {
                             // 添加到已处理集合，避免本次导入中重复
@@ -215,7 +215,7 @@ public class BillImportServiceImpl implements BillImportService {
             } catch (Exception e) {
                 failCount++;
                 addImportError(result, billTransaction.getTradeNo(), "处理失败：" + e.getMessage(), billTransaction.getDescription());
-                log.warn("处理交易记录失败，tradeNo：{}", billTransaction.getTradeNo(), e);
+                log.warn("处理交易记录失败，tradeNo={}", billTransaction.getTradeNo(), e);
             }
         }
         

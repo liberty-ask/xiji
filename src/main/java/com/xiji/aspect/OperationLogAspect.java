@@ -5,6 +5,7 @@ import com.xiji.entity.domain.OperationLogs;
 import com.xiji.service.OperationLogsService;
 import com.xiji.utils.IpUtils;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
  * 操作日志切面类
  * 拦截带有`@OperationLog`注解的方法记录日志。
  */
+@Slf4j
 @Aspect
 @Component
 public class OperationLogAspect {
@@ -43,43 +45,47 @@ public class OperationLogAspect {
     }
 
     private void saveLog(JoinPoint joinPoint, Throwable exception) {
-        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        OperationLog operationLog = signature.getMethod().getAnnotation(OperationLog.class);
-        String description = operationLog.description();
+        try {
+            MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+            OperationLog operationLog = signature.getMethod().getAnnotation(OperationLog.class);
+            String description = operationLog.description();
 
-        // 获取请求信息
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        HttpServletRequest request = null;
-        if (attributes != null) {
-            request = attributes.getRequest();
+            // 获取请求信息
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            HttpServletRequest request = null;
+            if (attributes != null) {
+                request = attributes.getRequest();
+            }
+
+            String url = null;
+            if (request != null) {
+                url = request.getRequestURL().toString();
+            }
+            String method = null;
+            if (request != null) {
+                method = request.getMethod();
+            }
+            // 获取ip地址
+            String ip = IpUtils.getIpAddr(request);
+
+            // 获取请求参数（过滤敏感信息）
+            String params = getRequestParams(joinPoint);
+
+            // 创建日志实体
+            OperationLogs logEntity = new OperationLogs();
+            logEntity.setDescription(description);
+            logEntity.setUrl(url);
+            logEntity.setMethod(method);
+            logEntity.setIp(ip);
+            logEntity.setParams(params);
+            logEntity.setException(exception != null ? exception.getMessage() : null);
+            logEntity.setCreatedAt(LocalDateTime.now());
+
+            // 保存日志
+            operationLogService.save(logEntity);
+        } catch (Exception e) {
+            log.error("保存操作日志失败", e);
         }
-
-        String url = null;
-        if (request != null) {
-            url = request.getRequestURL().toString();
-        }
-        String method = null;
-        if (request != null) {
-            method = request.getMethod();
-        }
-        // 获取ip地址
-        String ip = IpUtils.getIpAddr(request);
-
-        // 获取请求参数（过滤敏感信息）
-        String params = getRequestParams(joinPoint);
-
-        // 创建日志实体
-        OperationLogs logEntity = new OperationLogs();
-        logEntity.setDescription(description);
-        logEntity.setUrl(url);
-        logEntity.setMethod(method);
-        logEntity.setIp(ip);
-        logEntity.setParams(params);
-        logEntity.setException(exception != null ? exception.getMessage() : null);
-        logEntity.setCreatedAt(LocalDateTime.now());
-
-        // 保存日志
-        operationLogService.save(logEntity);
     }
     
     /**
@@ -119,6 +125,7 @@ public class OperationLogAspect {
             
             return params.length() > 0 ? params.toString() : null;
         } catch (Exception e) {
+            log.warn("获取请求参数失败", e);
             return "参数获取失败";
         }
     }

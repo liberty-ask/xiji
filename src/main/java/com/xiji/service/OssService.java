@@ -92,7 +92,7 @@ public class OssService {
             PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, objectKey, inputStream);
             ossClient.putObject(putObjectRequest);
 
-            log.info("文件上传OSS成功，Bucket：{}，ObjectKey：{}", bucketName, objectKey);
+            log.info("文件上传OSS成功，bucket={}，objectKey={}", bucketName, objectKey);
 
             // 返回objectKey用于存储到数据库
             return objectKey;
@@ -104,15 +104,6 @@ public class OssService {
                 ossClient.shutdown();
             }
         }
-    }
-
-    /**
-     * 上传文件到OSS（默认上传到根目录）
-     * @param file 上传的文件
-     * @return OSS对象键（objectKey），用于存储到数据库
-     */
-    public String uploadFile(MultipartFile file) {
-        return uploadFile(file, null);
     }
 
     /**
@@ -190,9 +181,9 @@ public class OssService {
             ossClient = createOssClient();
             String bucketName = ossConfig.getBucketName();
             ossClient.deleteObject(bucketName, objectKey);
-            log.info("删除OSS文件成功，Bucket：{}，ObjectKey：{}", bucketName, objectKey);
+            log.info("删除OSS文件成功，bucket={}，objectKey={}", bucketName, objectKey);
         } catch (Exception e) {
-            log.error("删除OSS文件失败，ObjectKey：{}", objectKey, e);
+            log.error("删除OSS文件失败，objectKey={}", objectKey, e);
             throw new RuntimeException("删除文件失败：" + e.getMessage(), e);
         } finally {
             if (ossClient != null) {
@@ -218,7 +209,7 @@ public class OssService {
             return ossClient.getObject(bucketName, objectKey);
         } catch (Exception e) {
             ossClient.shutdown();
-            log.error("从OSS下载文件失败，ObjectKey：{}", objectKey, e);
+            log.error("从OSS下载文件失败，objectKey={}", objectKey, e);
             throw new RuntimeException("下载文件失败：" + e.getMessage(), e);
         }
     }

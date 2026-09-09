@@ -55,13 +55,13 @@ public class JwtSecurityConfig implements CommandLineRunner {
         } else if (signKey.length() < 32) {
             log.warn("========== JWT安全警告 ==========");
             log.warn("JWT签名密钥长度不足！");
-            log.warn("当前长度：{}，建议长度：至少32个字符（256位）", signKey.length());
+            log.warn("当前长度={}，建议长度至少32个字符（256位）", signKey.length());
             log.warn("==================================");
             if (isProduction) {
                 log.warn("生产环境建议使用更长的密钥");
             }
         } else {
-            log.info("JWT密钥配置检查通过，密钥长度：{}", signKey.length());
+            log.info("JWT密钥配置检查通过，keyLength={}", signKey.length());
         }
     }
 }

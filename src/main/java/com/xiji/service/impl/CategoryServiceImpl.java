@@ -22,15 +22,6 @@ import java.util.List;
 public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements CategoryService {
     
     @Override
-    public List<Category> getEnabledCategories() {
-        LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Category::getStatus, 1)
-                    .orderByAsc(Category::getSortOrder)
-                    .orderByAsc(Category::getId);
-        return list(queryWrapper);
-    }
-    
-    @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateSortOrder(List<Long> categoryIds) {
         if (categoryIds == null || categoryIds.isEmpty()) {

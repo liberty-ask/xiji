@@ -76,7 +76,7 @@ public class BillCategoryAiService {
         
         // 计算总批次数
         int totalBatches = (int) Math.ceil((double) transactions.size() / batchSize);
-        log.info("开始AI归类，总交易数：{}，批次大小：{}，总批次数：{}", 
+        log.info("开始AI归类，total={}，batchSize={}，totalBatches={}", 
                 transactions.size(), batchSize, totalBatches);
         
         // 异步处理所有批次
@@ -92,7 +92,7 @@ public class BillCategoryAiService {
                 try {
                     return categorizeBatch(batch, systemPrompt, startIndex);
                 } catch (Exception e) {
-                    log.error("批量归类失败，批次起始索引：{}", startIndex, e);
+                    log.error("批量归类失败，startIndex={}", startIndex, e);
                     // 失败时使用默认分类
                     List<BillCategoryAiResult> defaultResults = new ArrayList<>();
                     for (int j = 0; j < batch.size(); j++) {
@@ -116,7 +116,7 @@ public class BillCategoryAiService {
             // 设置超时时间
             allOf.get(AI_CALL_TIMEOUT, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
-            log.error("AI归类超时，已处理部分批次");
+            log.error("AI归类超时，已处理部分批次", e);
             // 取消所有未完成的任务
             futures.forEach(future -> future.cancel(true));
         } catch (Exception e) {
@@ -138,7 +138,7 @@ public class BillCategoryAiService {
         // 按索引排序，确保结果顺序正确
         results.sort((a, b) -> Integer.compare(a.getIndex(), b.getIndex()));
         
-        log.info("AI归类完成，总交易数：{}，成功处理：{}", transactions.size(), results.size());
+        log.info("AI归类完成，total={}，successCount={}", transactions.size(), results.size());
         
         return results;
     }
@@ -162,7 +162,7 @@ public class BillCategoryAiService {
         
         // 确保返回结果的数量与输入批次数量一致
         if (results.size() != batch.size()) {
-            log.warn("AI返回结果数量({})与输入批次数量({})不一致，startIndex：{}", 
+            log.warn("AI返回结果数量与输入批次不一致，resultCount={}，batchSize={}，startIndex={}", 
                     results.size(), batch.size(), startIndex);
             // 补充缺失的结果
             while (results.size() < batch.size()) {
@@ -383,7 +383,7 @@ public class BillCategoryAiService {
             
             return results;
         } catch (Exception e) {
-            log.error("解析AI批量响应失败: {}", aiResponse, e);
+            log.error("解析AI批量响应失败，responseLength={}", aiResponse != null ? aiResponse.length() : 0, e);
             throw new RuntimeException("解析AI响应失败: " + e.getMessage(), e);
         }
     }

@@ -126,7 +126,7 @@ public class WechatBillParser implements BillParser {
                 } catch (Exception e) {
                     errorCount++;
                     addError(result, actualRowNumber, "解析失败：" + e.getMessage(), row.toString());
-                    log.warn("解析第{}行数据失败", actualRowNumber, e);
+                    log.warn("解析行数据失败，row={}", actualRowNumber, e);
                 }
             }
             

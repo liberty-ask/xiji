@@ -7,6 +7,7 @@ import com.xiji.service.FamilyMemberService;
 import com.xiji.service.UserService;
 import com.xiji.utils.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.JoinPoint;
@@ -21,6 +22,7 @@ import java.util.Objects;
  * 权限检查切面类
  * 用于检查用户是否有权限执行某个操作
  */
+@Slf4j
 @Aspect
 @Component
 public class PermissionCheckAspect {
@@ -109,7 +111,8 @@ public class PermissionCheckAspect {
         } catch (UnauthorizedException e) {
             throw e;
         } catch (Exception e) {
-            throw new UnauthorizedException("权限检查失败: " + e.getMessage());
+            log.error("权限检查异常", e);
+            throw new UnauthorizedException("权限检查失败");
         }
     }
 }

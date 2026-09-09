@@ -37,7 +37,7 @@ public interface BillParser {
     
     /**
      * 获取平台代码
-     * @return 平台代码（alipay, wechat, cmb等）
+     * @return 平台代码（alipay, wechat, jd等）
      */
     String getPlatformCode();
 }

@@ -32,19 +32,6 @@ public class RedisUtils {
     }
 
     /**
-     * 设置缓存（不过期）
-     * @param key 键
-     * @param value 值
-     */
-    public void set(String key, Object value) {
-        try {
-            redisTemplate.opsForValue().set(key, value);
-        } catch (Exception e) {
-            log.error("Redis设置缓存失败，key={}", key, e);
-        }
-    }
-
-    /**
      * 获取缓存
      * @param key 键
      * @return 值
@@ -149,21 +136,6 @@ public class RedisUtils {
             return redisTemplate.opsForValue().increment(key, delta);
         } catch (Exception e) {
             log.error("Redis递增失败，key={}", key, e);
-            return null;
-        }
-    }
-
-    /**
-     * 递减
-     * @param key 键
-     * @param delta 递减因子
-     * @return 递减后的值
-     */
-    public Long decrement(String key, long delta) {
-        try {
-            return redisTemplate.opsForValue().decrement(key, delta);
-        } catch (Exception e) {
-            log.error("Redis递减失败，key={}", key, e);
             return null;
         }
     }

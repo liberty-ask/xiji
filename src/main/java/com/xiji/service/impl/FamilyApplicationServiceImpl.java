@@ -61,7 +61,9 @@ public class FamilyApplicationServiceImpl extends ServiceImpl<FamilyApplicationM
         
         boolean success = save(application);
         if (success) {
-            log.info("申请加入家庭成功，家庭ID={}，用户ID={}", familyId, userId);
+            log.info("申请加入家庭成功，familyId={}，userId={}", familyId, userId);
+        } else {
+            log.error("申请加入家庭失败，familyId={}，userId={}", familyId, userId);
         }
         return success;
     }
@@ -90,7 +92,11 @@ public class FamilyApplicationServiceImpl extends ServiceImpl<FamilyApplicationM
         // 如果批准，将用户加入家庭
         if (success && status == 1) {
             familyMemberService.addMemberToFamily(application.getFamilyId(), application.getUserId(), 0);
-            log.info("用户加入家庭成功，家庭ID={}，用户ID={}", application.getFamilyId(), application.getUserId());
+            log.info("批准加入家庭，familyId={}，userId={}，applicationId={}", application.getFamilyId(), application.getUserId(), applicationId);
+        } else if (success && status == 2) {
+            log.info("拒绝加入家庭，familyId={}，userId={}，applicationId={}", application.getFamilyId(), application.getUserId(), applicationId);
+        } else if (!success) {
+            log.error("处理家庭申请失败，applicationId={}，status={}", applicationId, status);
         }
         
         return success;

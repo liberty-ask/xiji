@@ -3,7 +3,6 @@ package com.xiji.controller;
 import cn.hutool.core.util.PhoneUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xiji.common.response.ResultVo;
-import com.xiji.config.CustomConfig;
 import com.xiji.entity.domain.Family;
 import com.xiji.entity.domain.User;
 import com.xiji.entity.dto.request.ForgotPasswordRequest;
@@ -175,6 +174,7 @@ public class MobileAuthController {
         
         // 检查用户状态
         if (user.getStatus() != null && user.getStatus() == 1) {
+            log.warn("用户登录被拒绝，账号已禁用，userId={}", user.getId());
             return ResultVo.error("用户已被禁用，请联系管理员解封");
         }
         
@@ -207,7 +207,8 @@ public class MobileAuthController {
         
         response.setToken(token);
         response.setUser(userResponse);
-        
+
+        log.info("用户登录成功，userId={}，mode={}", user.getId(), mode);
         return ResultVo.success("登录成功", response);
     }
 
@@ -289,7 +290,7 @@ public class MobileAuthController {
             // 设置当前选择的家庭
             user.setCurrentFamilyId(familyId);
             userService.updateById(user);
-            log.info("用户注册成功并创建家庭，用户ID={}，家庭ID={}", user.getId(), familyId);
+            log.info("用户注册成功并创建家庭，userId={}，familyId={}", user.getId(), familyId);
             
             // 生成JWT Token（不再包含role，权限检查时从家庭成员表获取）
             Map<String, Object> claims = new HashMap<>();
@@ -311,7 +312,7 @@ public class MobileAuthController {
             
             return ResultVo.success("注册成功", response);
         } catch (Exception e) {
-            log.error("用户注册失败，手机号={}", request.getPhone(), e);
+            log.error("用户注册失败，phone={}", ValidationUtils.maskPhone(request.getPhone()), e);
             // 手动标记事务回滚
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             // 返回统一格式的错误信息
@@ -378,8 +379,10 @@ public class MobileAuthController {
         // 更新时间由MyBatis-Plus自动填充
         
         if (userService.updateById(user)) {
+            log.info("密码重置成功，userId={}", user.getId());
             return ResultVo.success("密码重置成功");
         } else {
+            log.error("密码重置失败，userId={}", user.getId());
             return ResultVo.error("密码重置失败");
         }
     }

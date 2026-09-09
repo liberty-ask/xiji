@@ -49,7 +49,7 @@ public class CaptchaService {
         String key = getCaptchaKey(token);
         String storedCode = redisUtils.get(key, String.class);
         if (storedCode == null) {
-            log.warn("验证码已过期或不存在，token={}", token);
+            log.warn("图片验证码已过期或不存在，token={}", token);
             return false;
         }
         boolean matches = storedCode.equalsIgnoreCase(code);
@@ -58,7 +58,7 @@ public class CaptchaService {
             redisUtils.delete(key);
             log.debug("验证码验证成功，token={}", token);
         } else {
-            log.warn("验证码错误，token={}, 输入={}, 正确={}", token, code, storedCode);
+            log.warn("图片验证码错误，token={}", token);
         }
         return matches;
     }

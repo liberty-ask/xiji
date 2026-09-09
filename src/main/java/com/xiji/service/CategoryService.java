@@ -11,12 +11,6 @@ import java.util.List;
 public interface CategoryService extends IService<Category> {
     
     /**
-     * 获取所有启用的类别（按排序序号排序）
-     * @return 类别列表
-     */
-    List<Category> getEnabledCategories();
-    
-    /**
      * 更新类别排序
      * @param categoryIds 类别ID列表（按排序顺序）
      * @return 是否成功

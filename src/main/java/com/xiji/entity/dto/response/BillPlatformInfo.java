@@ -16,7 +16,7 @@ import java.util.List;
 public class BillPlatformInfo {
     
     /**
-     * 平台代码（alipay, wechat, cmb等）
+     * 平台代码（alipay, wechat, jd等）
      */
     private String code;
     

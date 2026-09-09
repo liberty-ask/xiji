@@ -110,7 +110,7 @@ public class HeaderDetector {
                     rowIndex++;
                 }
             } catch (Exception e) {
-                // 编码错误，尝试下一种编码
+                log.debug("CSV按当前编码未识别到表头，继续尝试下一编码");
                 continue;
             }
         }
@@ -229,6 +229,7 @@ public class HeaderDetector {
                     DataFormatter formatter = new DataFormatter();
                     return formatter.formatCellValue(cell);
                 } catch (Exception e) {
+                    log.debug("读取公式单元格失败，改用公式原文");
                     return cell.getCellFormula();
                 }
             case BLANK:

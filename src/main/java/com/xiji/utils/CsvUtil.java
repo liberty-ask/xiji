@@ -74,7 +74,7 @@ public class CsvUtil {
                 }
             }
         } catch (Exception e) {
-            log.error("读取CSV表头失败，跳过行数：{}", skipLines, e);
+            log.error("读取CSV表头失败，skipLines={}", skipLines, e);
             throw new RuntimeException("读取CSV表头失败：" + e.getMessage(), e);
         }
         return headers;
@@ -161,7 +161,7 @@ public class CsvUtil {
                 }
             }
         } catch (Exception e) {
-            log.error("读取CSV数据行失败，跳过行数：{}", skipLines, e);
+            log.error("读取CSV数据行失败，skipLines={}", skipLines, e);
             throw new RuntimeException("读取CSV数据行失败：" + e.getMessage(), e);
         }
         return rows;

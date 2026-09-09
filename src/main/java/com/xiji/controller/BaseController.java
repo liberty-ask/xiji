@@ -61,7 +61,7 @@ public abstract class BaseController {
             try {
                 return Long.parseLong((String) idObj);
             } catch (NumberFormatException e) {
-                log.warn("无法解析用户ID: {}", idObj);
+                log.warn("无法解析用户ID，id={}", idObj);
                 return null;
             }
         }

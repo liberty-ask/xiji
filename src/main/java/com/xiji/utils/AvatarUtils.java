@@ -50,7 +50,7 @@ public class AvatarUtils {
         // 处理完整URL，提取objectKey
         CustomConfig.OssConfig ossConfig = customConfig != null ? customConfig.getOss() : null;
         if (ossConfig == null) {
-            log.warn("OSS配置不存在，无法处理头像URL：{}", avatarUrl);
+            log.warn("OSS配置不存在，无法处理头像URL，avatar={}", avatarUrl);
             return trimmedUrl;
         }
         
@@ -101,7 +101,7 @@ public class AvatarUtils {
         }
         
         // 如果无法提取objectKey，返回原始值（兼容性处理）
-        log.warn("无法从URL中提取OSS objectKey，返回原始值：{}", avatarUrl);
+        log.warn("无法从URL中提取OSS objectKey，返回原始值，avatar={}", avatarUrl);
         return trimmedUrl;
     }
     
@@ -130,13 +130,13 @@ public class AvatarUtils {
             try {
                 return ossService.buildFileUrl(trimmedUrl);
             } catch (Exception e) {
-                log.error("构建OSS URL失败，objectKey：{}", trimmedUrl, e);
+                log.error("构建OSS URL失败，objectKey={}", trimmedUrl, e);
                 return trimmedUrl;
             }
         }
         
         // 如果OssService未初始化，返回原始值
-        log.warn("OssService未初始化，无法构建OSS URL，返回原始值：{}", avatarUrl);
+        log.warn("OssService未初始化，无法构建OSS URL，返回原始值，avatar={}", avatarUrl);
         return trimmedUrl;
     }
 }

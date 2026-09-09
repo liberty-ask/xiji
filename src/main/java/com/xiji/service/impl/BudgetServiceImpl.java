@@ -1,6 +1,5 @@
 package com.xiji.service.impl;
 
-import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiji.entity.domain.Budget;
@@ -21,18 +20,6 @@ import java.math.BigDecimal;
 @Service
 @RequiredArgsConstructor
 public class BudgetServiceImpl extends ServiceImpl<BudgetMapper, Budget> implements BudgetService {
-    
-    @Override
-    public Budget getOrCreateBudget(Long familyId) {
-        Budget budget = getBudget(familyId);
-        if (budget == null) {
-            budget = new Budget();
-            budget.setFamilyId(familyId);
-            budget.setAmount(BigDecimal.ZERO);
-            save(budget);
-        }
-        return budget;
-    }
     
     @Override
     @Transactional(rollbackFor = Exception.class)

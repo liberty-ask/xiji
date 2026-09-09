@@ -22,15 +22,12 @@ public class LoginCheckFilter implements Filter {
     
     // 白名单路径，不需要登录验证
     private static final String[] WHITELIST_PATHS = {
-        "/api/user/login",
-        "/api/user/register",
-        "/api/user/captcha",
-        "/api/v1/auth/send-code",                    // 手机端发送登录验证码
-        "/api/v1/auth/login",                        // 手机端登录
-        "/api/v1/auth/register/send-code",           // 手机端发送注册验证码
-        "/api/v1/auth/register",                     // 手机端注册
-        "/api/v1/auth/forgot-password/send-code",    // 手机端发送忘记密码验证码
-        "/api/v1/auth/forgot-password/reset",        // 手机端重置密码
+        "/api/v1/auth/send-code",
+        "/api/v1/auth/login",
+        "/api/v1/auth/register/send-code",
+        "/api/v1/auth/register",
+        "/api/v1/auth/forgot-password/send-code",
+        "/api/v1/auth/forgot-password/reset",
         "/swagger-ui",
         "/swagger-ui.html",
         "/swagger-ui/",
@@ -67,7 +64,7 @@ public class LoginCheckFilter implements Filter {
             //验证JWT令牌
             Claims claims = JwtUtils.parseJwt(token);
             if (claims != null) {
-                log.debug("JWT令牌验证成功，用户ID={}", claims.get("id"));
+                log.debug("JWT令牌验证成功，userId={}", claims.get("id"));
                 filterChain.doFilter(servletRequest, servletResponse);
                 return;
             } else {

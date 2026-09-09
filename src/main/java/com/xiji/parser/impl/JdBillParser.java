@@ -59,7 +59,7 @@ public class JdBillParser implements BillParser {
                 bis = new ByteArrayInputStream(bytes);
                 secondRowCells = CsvUtil.readHeaders(bis, 1, StandardCharsets.UTF_8);
             } catch (Exception e) {
-                // 如果UTF-8失败，尝试GBK编码
+                log.debug("京东账单第二行UTF-8读取失败，尝试GBK");
                 try {
                     bis = new ByteArrayInputStream(bytes);
                     secondRowCells = CsvUtil.readHeaders(bis, 1, Charset.forName("GBK"));
@@ -128,7 +128,7 @@ public class JdBillParser implements BillParser {
                 csvRows = CsvUtil.readDataRows(bis, headerRowIndex, charset);
             } catch (Exception e) {
                 // 如果UTF-8失败，尝试GBK编码
-                log.info("使用UTF-8编码读取失败，尝试GBK编码");
+                log.debug("京东账单UTF-8读取失败，尝试GBK");
                 charset = Charset.forName("GBK");
                 bis = new ByteArrayInputStream(bytes);
                 headers = CsvUtil.readHeaders(bis, headerRowIndex, charset);
@@ -158,7 +158,7 @@ public class JdBillParser implements BillParser {
                 } catch (Exception e) {
                     errorCount++;
                     addError(result, actualRowNumber, "解析失败：" + e.getMessage(), row.toString());
-                    log.warn("解析第{}行数据失败", actualRowNumber, e);
+                    log.warn("解析行数据失败，row={}", actualRowNumber, e);
                 }
             }
             

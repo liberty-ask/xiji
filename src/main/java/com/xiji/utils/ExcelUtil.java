@@ -64,7 +64,7 @@ public class ExcelUtil {
                 }
             }
         } catch (Exception e) {
-            log.error("读取Excel表头失败，跳过行数：{}", skipRows, e);
+            log.error("读取Excel表头失败，skipRows={}", skipRows, e);
             throw new RuntimeException("读取Excel表头失败：" + e.getMessage(), e);
         } finally {
             closeWorkbook(workbook);
@@ -133,7 +133,7 @@ public class ExcelUtil {
                 }
             }
         } catch (Exception e) {
-            log.error("读取Excel数据行失败，跳过行数：{}", skipRows, e);
+            log.error("读取Excel数据行失败，skipRows={}", skipRows, e);
             throw new RuntimeException("读取Excel数据行失败：" + e.getMessage(), e);
         } finally {
             closeWorkbook(workbook);
@@ -177,6 +177,7 @@ public class ExcelUtil {
                 try {
                     return getCellValueAsString(cell);
                 } catch (Exception e) {
+                    log.debug("读取公式单元格计算值失败，改用公式原文");
                     return cell.getCellFormula();
                 }
             case BLANK:
@@ -245,7 +246,7 @@ public class ExcelUtil {
             java.util.Date date = new java.text.SimpleDateFormat("yyyy-MM-dd").parse(dateStr);
             return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         } catch (Exception e) {
-            log.warn("无法解析日期：{}", dateStr);
+            log.warn("无法解析日期，date={}", dateStr);
             return null;
         }
     }
@@ -270,7 +271,7 @@ public class ExcelUtil {
             
             return new BigDecimal(cleaned);
         } catch (Exception e) {
-            log.warn("无法解析金额：{}", amountStr);
+            log.warn("无法解析金额，amount={}", amountStr);
             return null;
         }
     }

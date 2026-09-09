@@ -53,21 +53,6 @@ public class ValidationUtils {
     }
     
     /**
-     * 验证密码强度（强密码：至少8位，包含大小写字母、数字）
-     * @param password 密码
-     * @return 是否满足强密码要求
-     */
-    public static boolean isStrongPassword(String password) {
-        if (password == null || password.length() < 8) {
-            return false;
-        }
-        boolean hasUpper = password.chars().anyMatch(Character::isUpperCase);
-        boolean hasLower = password.chars().anyMatch(Character::isLowerCase);
-        boolean hasDigit = password.chars().anyMatch(Character::isDigit);
-        return hasUpper && hasLower && hasDigit;
-    }
-    
-    /**
      * 验证手机号格式（中国大陆）
      * @param phone 手机号
      * @return 是否有效
@@ -78,6 +63,19 @@ public class ValidationUtils {
         }
         // 11位数字，以1开头，第二位为3-9
         return phone.matches("^1[3-9]\\d{9}$");
+    }
+
+    /**
+     * 脱敏手机号，非标准手机号原样返回（避免把用户名当成手机号处理）
+     */
+    public static String maskPhone(String phone) {
+        if (phone == null || phone.isEmpty()) {
+            return "";
+        }
+        if (!isValidPhone(phone)) {
+            return phone;
+        }
+        return phone.substring(0, 3) + "****" + phone.substring(7);
     }
 }
 

@@ -4,7 +4,6 @@ import cn.hutool.core.codec.Base64Encoder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.xiji.config.CustomConfig;
 import com.xiji.common.annotation.CheckPermission;
 import com.xiji.common.annotation.OperationLog;
 import com.xiji.entity.dto.request.LoginUser;
@@ -63,7 +62,7 @@ public class UserController {
      */
     @PostMapping("/captcha")
     public ResultVo imageCode(HttpServletRequest request) {
-        log.info("获取验证码");
+        log.debug("获取图片验证码");
         //生成的验证码
         String code = defaultKaptcha.createText();
         // 生成验证码token并存入Redis
@@ -91,7 +90,7 @@ public class UserController {
                 try {
                     outputStream.close();
                 } catch (IOException e) {
-                    log.error("关闭输出流失败", e);
+                    log.warn("关闭验证码输出流失败", e);
                 }
             }
         }
@@ -243,13 +242,15 @@ public class UserController {
         if (user.getAvatar() != null) {
             String avatar = AvatarUtils.processAvatarForStorage(user.getAvatar());
             user.setAvatar(avatar);
-            log.info("图片处理：{}", user.getAvatar());
+            log.debug("图片处理，avatar={}", user.getAvatar());
         }
         // 创建时间和更新时间由MyBatis-Plus自动填充
         //保存用户
         if (userService.save(user)) {
+            log.info("管理端用户注册成功，userId={}", user.getId());
             return ResultVo.success("注册成功");
-        }else {
+        } else {
+            log.error("管理端用户注册失败，username={}", user.getUsername());
             return ResultVo.error("注册失败");
         }
     }
@@ -258,7 +259,6 @@ public class UserController {
     /**
      *  登录
      */
-//    @OperationLog(description = "用户登录")
     @PostMapping("/login")
     public ResultVo login(@RequestBody LoginUser loginUser, HttpServletRequest request) {
         // 判断登录方式
@@ -312,7 +312,7 @@ public class UserController {
                 return ResultVo.error("图片验证码不能为空");
             }
             if (!captchaService.verifyCaptcha(loginUser.getCaptchaToken(), loginUser.getCaptcha())) {
-                log.warn("图片验证码验证失败：用户输入={}", loginUser.getCaptcha());
+                log.warn("图片验证码验证失败");
                 return ResultVo.error("图片验证码错误或已过期");
             }
             
@@ -351,6 +351,7 @@ public class UserController {
         
         // 检查用户状态
         if (u.getStatus() == 1) {
+            log.warn("用户登录被拒绝，账号已禁用，userId={}", u.getId());
             return ResultVo.error("用户已被禁用，请联系管理员解封");
         }
         
@@ -371,6 +372,7 @@ public class UserController {
         String token = JwtUtils.generateJwt(data);
         // 设置token
         response.setToken(token);
+        log.info("用户登录成功，userId={}，loginType={}", u.getId(), loginType);
         // 返回结果
         return ResultVo.success("登录成功", response);
     }
@@ -415,10 +417,11 @@ public class UserController {
         String newPasswordHash = PasswordUtils.encode(user.getNewPassword());
         // 设置新密码
         u.setPassword(newPasswordHash);
-        log.info("修改密码：用户ID={}", u.getId());
+        log.info("修改密码，userId={}", u.getId());
         if (userService.updateById(u)) {
             return ResultVo.success("修改成功");
-        }else {
+        } else {
+            log.error("修改密码失败，userId={}", u.getId());
             return ResultVo.error("修改失败");
         }
     }
@@ -457,7 +460,7 @@ public class UserController {
             try {
                 return Long.parseLong((String) idObj);
             } catch (NumberFormatException e) {
-                log.warn("无法解析用户ID: {}", idObj);
+                log.warn("无法解析用户ID，id={}", idObj);
                 return null;
             }
         }
@@ -500,7 +503,7 @@ public class UserController {
         if (user.getAvatar() != null) {
             String avatar = AvatarUtils.processAvatarForStorage(user.getAvatar());
             user.setAvatar(avatar);
-            log.info("图片处理：{}", user.getAvatar());
+            log.debug("图片处理，avatar={}", user.getAvatar());
         }
         if (userService.save(user)) {
             return ResultVo.success("新增成功");
@@ -526,7 +529,7 @@ public class UserController {
         if (user.getAvatar() != null) {
             String avatar = AvatarUtils.processAvatarForStorage(user.getAvatar());
             user.setAvatar(avatar);
-            log.info("图片处理：{}", user.getAvatar());
+            log.debug("图片处理，avatar={}", user.getAvatar());
         }
         if (userService.updateById(user)) {
             return ResultVo.success("编辑成功");
@@ -568,20 +571,6 @@ public class UserController {
         IPage<User> pageList = userService.page(page, queryWrapper);
         // 返回结果
         return ResultVo.success(pageList);
-    }
-
-    /**
-     * 查询管理员列表
-     * 注意：由于角色信息已移至家庭成员关联表，此接口已废弃。
-     * 如需查询特定家庭的管理员，请使用家庭成员相关接口。
-     */
-    @GetMapping("/admin")
-    @Deprecated
-    public ResultVo getAdminList(PageParam param) {
-        // 角色信息已移至家庭成员关联表，无法再按用户表中的role查询管理员
-        // 此接口保留以兼容旧代码，但实际返回空列表
-        // 如需查询管理员，请使用家庭成员相关接口，传入家庭ID参数
-        return ResultVo.success("角色信息已移至家庭成员关联表，请使用家庭成员相关接口查询管理员");
     }
 
 }

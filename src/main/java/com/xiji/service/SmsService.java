@@ -81,7 +81,7 @@ public class SmsService {
         try {
             // 验证手机号格式
             if (!ValidationUtils.isValidPhone(phone)) {
-                log.warn("手机号格式不正确：{}", phone);
+                log.warn("手机号格式不正确，length={}", phone != null ? phone.length() : 0);
                 return new SmsSendResult(false, null);
             }
             
@@ -94,7 +94,7 @@ public class SmsService {
             // 检查发送间隔
             String intervalKey = getIntervalKey(phone, type);
             if (redisUtils.hasKey(intervalKey)) {
-                log.warn("发送过于频繁，手机号：{}", phone);
+                log.warn("发送过于频繁，phone={}", ValidationUtils.maskPhone(phone));
                 return new SmsSendResult(false, null);
             }
             
@@ -114,7 +114,7 @@ public class SmsService {
                 Long interval = smsConfig.getSendInterval() != null ? smsConfig.getSendInterval() : 60L;
                 redisUtils.set(intervalKey, "1", interval);
                 
-                log.info("开发模式：验证码已生成（未发送短信），手机号：{}，类型：{}，验证码：{}", phone, type, code);
+                log.info("开发模式：验证码已生成（未发送短信），phone={}，type={}", ValidationUtils.maskPhone(phone), type);
                 return new SmsSendResult(true, code);
             } else {
                 // 生产模式：发送短信
@@ -137,15 +137,15 @@ public class SmsService {
                     Long interval = smsConfig.getSendInterval() != null ? smsConfig.getSendInterval() : 60L;
                     redisUtils.set(intervalKey, "1", interval);
                     
-                    log.info("短信验证码发送成功，手机号：{}，类型：{}", phone, type);
+                    log.info("短信验证码发送成功，phone={}，type={}", ValidationUtils.maskPhone(phone), type);
                     return new SmsSendResult(true, null);
                 } else {
-                    log.error("短信发送失败，手机号：{}，错误：{}", phone, response.getBody().getMessage());
+                    log.error("短信发送失败，phone={}，error={}", ValidationUtils.maskPhone(phone), response.getBody().getMessage());
                     return new SmsSendResult(false, null);
                 }
             }
         } catch (Exception e) {
-            log.error("发送短信验证码异常，手机号：{}", phone, e);
+            log.error("发送短信验证码异常，phone={}", ValidationUtils.maskPhone(phone), e);
             return new SmsSendResult(false, null);
         }
     }
@@ -165,7 +165,7 @@ public class SmsService {
         String codeKey = getCodeKey(phone, type);
         Object storedCodeObj = redisUtils.get(codeKey);
         if (storedCodeObj == null) {
-            log.warn("短信验证码已过期或不存在，手机号：{}", phone);
+            log.warn("短信验证码已过期或不存在，phone={}", ValidationUtils.maskPhone(phone));
             return false;
         }
         
@@ -176,10 +176,10 @@ public class SmsService {
         if (matches) {
             // 验证成功后删除验证码（一次性使用）
             redisUtils.delete(codeKey);
-            log.debug("短信验证码验证成功，手机号：{}", phone);
+            log.debug("短信验证码验证成功，phone={}", ValidationUtils.maskPhone(phone));
         } else {
-            log.warn("短信验证码错误，手机号：{}，输入：{}，存储：{}（类型：{}）", 
-                phone, code, storedCode, storedCodeObj.getClass().getSimpleName());
+            log.warn("短信验证码错误，phone={}，storedType={}",
+                ValidationUtils.maskPhone(phone), storedCodeObj.getClass().getSimpleName());
         }
         
         return matches;

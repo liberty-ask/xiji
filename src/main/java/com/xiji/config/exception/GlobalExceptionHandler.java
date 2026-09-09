@@ -1,8 +1,7 @@
 package com.xiji.config.exception;
 
-import cn.hutool.log.Log;
-import cn.hutool.log.LogFactory;
 import com.xiji.common.response.ResultVo;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,18 +11,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.Set;
 
 /**
  * 全局异常处理器
  * @author liberty
  */
+@Slf4j
 @RestControllerAdvice
 @ControllerAdvice(basePackages = "com.xiji")
 public class GlobalExceptionHandler {
-
-    private static final Log log = LogFactory.get();
 
     /**
      * 处理参数验证失败异常（@RequestBody @Valid）
@@ -34,7 +31,7 @@ public class GlobalExceptionHandler {
         String errorMessage = fieldError != null 
             ? fieldError.getDefaultMessage() 
             : "参数验证失败";
-        log.warn("参数验证失败: {}", errorMessage);
+        log.warn("参数验证失败，message={}", errorMessage);
         return ResultVo.error(errorMessage);
     }
 
@@ -47,7 +44,7 @@ public class GlobalExceptionHandler {
         String errorMessage = fieldError != null 
             ? fieldError.getDefaultMessage() 
             : "参数验证失败";
-        log.warn("参数验证失败: {}", errorMessage);
+        log.warn("参数验证失败，message={}", errorMessage);
         return ResultVo.error(errorMessage);
     }
 
@@ -61,25 +58,17 @@ public class GlobalExceptionHandler {
             .map(ConstraintViolation::getMessage)
             .findFirst()
             .orElse("参数验证失败");
-        log.warn("参数验证失败: {}", errorMessage);
+        log.warn("参数验证失败，message={}", errorMessage);
         return ResultVo.error(errorMessage);
     }
 
     // 处理权限不足，UnauthorizedException
     @ExceptionHandler(UnauthorizedException.class)
     public ResultVo handleUnauthorizedException(UnauthorizedException ex) {
-        log.warn("权限不足: {}", ex.getMessage());
+        log.warn("权限不足，message={}", ex.getMessage());
         return ResultVo.error("用户没有权限访问：" + ex.getMessage());
     }
-    
-    // 自定义异常处理@ExceptionHandler,主要用于CustomException
-    @ExceptionHandler(CustomException.class)
-    public ResultVo customError(CustomException e) {
-        log.error("自定义异常: {}", e.getMessage(), e);
-        return ResultVo.error(e.getMessage() != null ? e.getMessage() : "自定义异常");
-    }
 
-    // 统一异常处理@ExceptionHandler,主要用于Exception
     @ExceptionHandler(Exception.class)
     public ResultVo error(Exception e) {
         log.error("系统异常", e);

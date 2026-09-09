@@ -356,13 +356,15 @@ public class MobileTransactionController extends BaseController {
             transaction.setCreatedBy(userId);
 
             if (transactionsService.save(transaction)) {
+                log.info("语音记账成功，userId={}，familyId={}，transactionId={}", userId, familyId, transaction.getId());
                 return ResultVo.success("记账成功");
             } else {
+                log.error("语音记账保存失败，userId={}，familyId={}", userId, familyId);
                 return ResultVo.error("记账失败");
             }
         } catch (Exception e) {
-            log.error("语音记账失败", e);
-            return ResultVo.error("记账失败：" + e.getMessage());
+            log.error("语音记账失败，userId={}", userId, e);
+            return ResultVo.error("记账失败");
         }
     }
 

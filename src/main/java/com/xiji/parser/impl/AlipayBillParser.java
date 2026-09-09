@@ -110,7 +110,7 @@ public class AlipayBillParser implements BillParser {
                 bis = new ByteArrayInputStream(bytes);
                 csvRows = CsvUtil.readDataRows(bis, headerRowIndex, charset);
             } catch (Exception e) {
-                // 编码错误，尝试下一种编码
+                log.warn("读取支付宝账单表头失败", e);
             }
             
             if (headers == null || headers.isEmpty()) {
@@ -136,7 +136,7 @@ public class AlipayBillParser implements BillParser {
                 } catch (Exception e) {
                     errorCount++;
                     addError(result, actualRowNumber, "解析失败：" + e.getMessage(), row.toString());
-                    log.warn("解析第{}行数据失败", actualRowNumber, e);
+                    log.warn("解析行数据失败，row={}", actualRowNumber, e);
                 }
             }
             

@@ -72,7 +72,7 @@ public class CorsConfig {
                 
                 // 验证Origin
                 if (!isOriginAllowed(origin)) {
-                    log.warn("CORS验证失败，Origin不被允许: {}", origin);
+                    log.warn("CORS验证失败，origin不被允许，origin={}", origin);
                     writeCorsErrorResponse(httpResponse, "跨域请求被拒绝，不允许的源");
                     return;
                 }
@@ -160,7 +160,7 @@ public class CorsConfig {
                     String trimmedOrigin = origin.trim();
                     if (!trimmedOrigin.isEmpty()) {
                         configuration.addAllowedOriginPattern(trimmedOrigin);
-                        log.info("配置CORS允许源: {}", trimmedOrigin);
+                        log.info("配置CORS允许源，origin={}", trimmedOrigin);
                     }
                 }
             }

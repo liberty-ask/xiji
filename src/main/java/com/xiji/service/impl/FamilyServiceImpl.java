@@ -29,10 +29,10 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family> impleme
         family.setUpdatedAt(LocalDateTime.now());
         
         if (save(family)) {
-            log.info("创建家庭成功，家庭ID={}，创建者ID={}", family.getId(), ownerId);
+            log.info("创建家庭成功，familyId={}，ownerId={}", family.getId(), ownerId);
             return family;
         } else {
-            log.error("创建家庭失败，创建者ID={}", ownerId);
+            log.error("创建家庭失败，ownerId={}", ownerId);
             throw new RuntimeException("创建家庭失败");
         }
     }

@@ -86,10 +86,10 @@ public class JwtUtils {
                     .getPayload();
             return claims;
         } catch (ExpiredJwtException e) {
-            log.error("JWT已过期: {}", e.getMessage());
+            log.debug("JWT已过期");
             return null;
         } catch (Exception e) {
-            log.error("JWT解析失败: {}", e.getMessage());
+            log.warn("JWT解析失败，reason={}", e.getClass().getSimpleName());
             return null;
         }
     }

@@ -41,7 +41,7 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
         queryWrapper.eq(FamilyMember::getFamilyId, familyId)
                    .eq(FamilyMember::getUserId, userId);
         if (count(queryWrapper) > 0) {
-            log.warn("用户已经是该家庭的成员，家庭ID={}，用户ID={}", familyId, userId);
+            log.warn("用户已经是该家庭的成员，familyId={}，userId={}", familyId, userId);
             return false;
         }
         
@@ -53,7 +53,9 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
         
         boolean success = save(member);
         if (success) {
-            log.info("用户加入家庭成功，家庭ID={}，用户ID={}，角色={}", familyId, userId, role);
+            log.info("用户加入家庭成功，familyId={}，userId={}，role={}", familyId, userId, role);
+        } else {
+            log.error("用户加入家庭失败，familyId={}，userId={}", familyId, userId);
         }
         return success;
     }
@@ -67,7 +69,9 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
         
         boolean success = remove(queryWrapper);
         if (success) {
-            log.info("用户退出家庭成功，家庭ID={}，用户ID={}", familyId, userId);
+            log.info("用户退出家庭成功，familyId={}，userId={}", familyId, userId);
+        } else {
+            log.warn("用户退出家庭失败，familyId={}，userId={}", familyId, userId);
         }
         return success;
     }

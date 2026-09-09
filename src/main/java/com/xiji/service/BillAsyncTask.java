@@ -54,7 +54,7 @@ public class BillAsyncTask {
             // 更新任务状态为处理中
             billTaskService.updateTaskStatus(taskId, 1, 0, 0, 0, 0, null);
 
-            log.info("开始异步处理账单，taskId：{}，originalFileName：{}", taskId, originalFileName);
+            log.info("开始异步处理账单，taskId={}，originalFileName={}", taskId, originalFileName);
 
             // 1. 从OSS下载文件并解析
             OSSObject ossObject = ossService.downloadFile(billTask.getOssFilePath());
@@ -94,11 +94,11 @@ public class BillAsyncTask {
                 // 更新进度为100%
                 billTaskService.updateTaskStatus(taskId, 2, 100, parseResult.getTotalCount(), parseResult.getSuccessCount(), parseResult.getErrorCount(), null);
 
-                log.info("异步处理账单完成，taskId：{}，解析记录数：{}", taskId, parseResult.getSuccessCount());
+                log.info("异步处理账单完成，taskId={}，parseCount={}", taskId, parseResult.getSuccessCount());
 
             }
         } catch (Exception e) {
-            log.error("异步处理账单失败，taskId：{}", taskId, e);
+            log.error("异步处理账单失败，taskId={}", taskId, e);
             // 更新任务状态为失败
             billTaskService.updateTaskStatus(taskId, 3, 100, 0, 0, 0, e.getMessage());
         }
@@ -119,7 +119,7 @@ public class BillAsyncTask {
             // 更新任务状态为处理中
             billTaskService.updateTaskStatus(taskId, 1, 0, 0, 0, 0, null);
 
-            log.info("开始异步导入账单，taskId：{}，billUploadId：{}", taskId, billUploadId);
+            log.info("开始异步导入账单，taskId={}，billUploadId={}", taskId, billUploadId);
 
             // 1. 查询账单上传记录
             com.xiji.entity.domain.BillUpload billUpload = billUploadService.getById(billUploadId);
@@ -192,11 +192,11 @@ public class BillAsyncTask {
             // 更新进度为100%
             billTaskService.updateTaskStatus(taskId, 2, 100, totalCount, importResult.getSuccessCount(), importResult.getFailCount(), errorMessage);
 
-            log.info("异步导入账单完成，taskId：{}，成功：{}，失败：{}", 
+            log.info("异步导入账单完成，taskId={}，successCount={}，failCount={}", 
                     taskId, importResult.getSuccessCount(), importResult.getFailCount());
 
         } catch (Exception e) {
-            log.error("异步导入账单失败，taskId：{}", taskId, e);
+            log.error("异步导入账单失败，taskId={}", taskId, e);
             // 更新任务状态为失败
             billTaskService.updateTaskStatus(taskId, 3, 100, 0, 0, 0, e.getMessage());
         }
@@ -254,7 +254,7 @@ public class BillAsyncTask {
                 billTaskService.updateTaskStatus(taskId, 1, progress, totalCount, totalSuccess, totalFail, null);
 
             } catch (Exception e) {
-                log.error("批次导入失败，批次范围：{} - {}", i, endIndex, e);
+                log.error("批次导入失败，startIndex={}，endIndex={}", i, endIndex, e);
                 totalFail += batchTransactions.size();
             }
         }

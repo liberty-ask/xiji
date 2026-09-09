@@ -55,7 +55,7 @@ public class VoiceTransactionAiService {
             
             return result;
         } catch (Exception e) {
-            log.error("AI解析语音文本失败: {}", text, e);
+            log.error("AI解析语音文本失败，textLength={}", text != null ? text.length() : 0, e);
             throw new RuntimeException("语音记账失败");
         }
     }
@@ -211,7 +211,7 @@ public class VoiceTransactionAiService {
                     LocalDate date = LocalDate.parse(dateStr);
                     response.setDate(date);
                 } catch (Exception e) {
-                    log.warn("AI返回的日期格式不正确: {}, 使用默认日期", dateStr);
+                    log.warn("AI返回的日期格式不正确，date={}，改用默认日期", dateStr);
                     response.setDate(LocalDate.parse(defaultDate));
                 }
             } else {
@@ -230,7 +230,7 @@ public class VoiceTransactionAiService {
             
             return response;
         } catch (Exception e) {
-            log.error("解析AI响应失败: {}", aiResponse, e);
+            log.error("解析AI响应失败，responseLength={}", aiResponse != null ? aiResponse.length() : 0, e);
             throw new RuntimeException("解析AI响应失败: " + e.getMessage(), e);
         }
     }

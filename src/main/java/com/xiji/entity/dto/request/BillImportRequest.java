@@ -19,13 +19,6 @@ public class BillImportRequest {
     private Long billUploadId;
     
     /**
-     * 文件ID（已废弃，使用billUploadId）
-     * @deprecated 使用billUploadId替代
-     */
-    @Deprecated
-    private String fileId;
-    
-    /**
      * 是否跳过重复记录（默认true）
      */
     private Boolean skipDuplicates = true;

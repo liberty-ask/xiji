@@ -1,7 +1,6 @@
 package com.xiji.controller;
 
 import com.xiji.common.response.ResultVo;
-import com.xiji.config.CustomConfig;
 import com.xiji.entity.domain.BillTask;
 import com.xiji.entity.domain.BillUpload;
 import com.xiji.entity.dto.request.BillImportRequest;
@@ -96,7 +95,7 @@ public class BillUploadControllerV2 extends BaseController {
             String objectKey = ossService.uploadFile(file, BILL_OSS_FOLDER);
             String fileUrl = ossService.buildFileUrl(objectKey);
             
-            log.info("账单文件上传成功，用户ID：{}，文件名：{}，ObjectKey：{}", userId, originalFileName, objectKey);
+            log.info("账单文件上传成功，userId={}，fileName={}，objectKey={}", userId, originalFileName, objectKey);
             
             // 2. 创建或更新账单上传记录
             BillUpload billUpload = billUploadService.getOne(
@@ -146,7 +145,7 @@ public class BillUploadControllerV2 extends BaseController {
             response.setTaskId(billTask.getId());
             response.setMessage("账单已开始处理，请稍后查询结果");
             
-            log.info("账单处理任务已创建，用户ID：{}，taskId：{}，billUploadId：{}", 
+            log.info("账单处理任务已创建，userId={}，taskId={}，billUploadId={}", 
                 userId, billTask.getId(), billUpload.getId());
             
             return ResultVo.success(response);
@@ -195,7 +194,7 @@ public class BillUploadControllerV2 extends BaseController {
             try {
                 cachedData = redisUtils.get(cacheKey);
             } catch (Exception e) {
-                log.error("获取Redis缓存失败，billUploadId：{}", request.getBillUploadId(), e);
+                log.error("获取Redis缓存失败，billUploadId={}", request.getBillUploadId(), e);
                 return ResultVo.error("系统错误：Redis连接失败，请稍后重试或联系管理员");
             }
             
@@ -226,7 +225,7 @@ public class BillUploadControllerV2 extends BaseController {
             response.setTaskId(billTask.getId());
             response.setMessage("账单导入已开始，请稍后查询结果");
             
-            log.info("账单导入任务已创建，用户ID：{}，taskId：{}，billUploadId：{}", 
+            log.info("账单导入任务已创建，userId={}，taskId={}，billUploadId={}", 
                 userId, billTask.getId(), billUpload.getId());
             
             return ResultVo.success(response);
@@ -245,7 +244,6 @@ public class BillUploadControllerV2 extends BaseController {
     public ResultVo getPlatforms() {
         List<com.xiji.parser.BillParser> parsers = billParserService.getAllParsers();
         List<com.xiji.entity.dto.response.BillPlatformInfo> platforms = parsers.stream()
-                .filter(parser -> !"cmb".equals(parser.getPlatformCode()))
                 .map(parser -> {
                     // 根据平台代码确定支持的文件格式
                     List<String> supportedFormats;
@@ -253,23 +251,15 @@ public class BillUploadControllerV2 extends BaseController {
 
                     String platformCode = parser.getPlatformCode();
                     if ("jd".equals(platformCode)) {
-                        // 京东：只支持CSV
                         supportedFormats = Arrays.asList("csv");
                         sampleFileExtension = "csv";
                     } else if ("alipay".equals(platformCode)) {
-                        // 支付宝：只支持CSV
                         supportedFormats = Arrays.asList("csv");
                         sampleFileExtension = "csv";
                     } else if ("wechat".equals(platformCode)) {
-                        // 微信：只支持XLSX
                         supportedFormats = Arrays.asList("xlsx", "xls");
                         sampleFileExtension = "xlsx";
-                    } else if ("cmb".equals(platformCode)) {
-                        // 招商银行：只支持PDF
-                        supportedFormats = Arrays.asList("pdf");
-                        sampleFileExtension = "pdf";
                     } else {
-                        // 其他平台：默认支持所有格式
                         supportedFormats = Arrays.asList("xlsx", "xls", "csv");
                         sampleFileExtension = "xlsx";
                     }
@@ -323,7 +313,7 @@ public class BillUploadControllerV2 extends BaseController {
                     BillParseResult parseResult = gson.fromJson(parseResultJson, BillParseResult.class);
                     response.setParseResult(parseResult);
                 } catch (Exception e) {
-                    log.error("解析缓存数据失败，taskId：{}", taskId, e);
+                    log.error("解析缓存数据失败，taskId={}", taskId, e);
                 }
             }
         }

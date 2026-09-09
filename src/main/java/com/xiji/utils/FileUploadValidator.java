@@ -144,20 +144,20 @@ public class FileUploadValidator {
         
         // 检查是否为禁止的文件类型
         if (FORBIDDEN_EXTENSIONS.contains(extension)) {
-            log.warn("禁止上传的文件类型：{}", extension);
+            log.warn("禁止上传的文件类型，extension={}", extension);
             return "不允许上传此类型的文件";
         }
         
         // 检查是否为允许的文件类型
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
-            log.warn("不支持的文件类型：{}", extension);
+            log.warn("不支持的文件类型，extension={}", extension);
             return "不支持的文件类型：" + extension;
         }
         
         // 检查MIME类型（如果可能被伪造，这里作为辅助验证）
         String contentType = file.getContentType();
         if (!isValidMimeType(contentType, extension)) {
-            log.warn("文件MIME类型不匹配：文件名={}, 声明类型={}, 扩展名={}", originalFileName, contentType, extension);
+            log.warn("文件MIME类型不匹配，fileName={}，contentType={}，extension={}", originalFileName, contentType, extension);
             // 不直接拒绝，因为MIME类型可能不准确，只记录警告
         }
         

@@ -22,7 +22,6 @@ import com.xiji.service.FamilyApplicationService;
 import com.xiji.service.FamilyMemberService;
 import com.xiji.service.FamilyService;
 import com.xiji.service.UserService;
-import com.xiji.config.CustomConfig;
 import com.xiji.utils.AvatarUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -505,9 +504,11 @@ public class MobileFamilyController extends BaseController {
             if (success) {
                 return ResultVo.success("申请已提交，请等待审核");
             } else {
+                log.error("申请加入家庭失败，userId={}，familyId={}", userId, familyId);
                 return ResultVo.error("申请失败");
             }
         } catch (RuntimeException e) {
+            log.warn("申请加入家庭被拒绝，userId={}，familyId={}，reason={}", userId, familyId, e.getMessage());
             return ResultVo.error(e.getMessage());
         }
     }

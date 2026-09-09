@@ -155,7 +155,7 @@ public class TransactionsController extends BaseController {
         }
         // 设置更新人
         transaction.setUpdatedBy(userId);
-        log.info("update transaction: id={}", transaction.getId());
+        log.info("更新交易记录，id={}", transaction.getId());
         
         if (!transactionsService.updateById(transaction)) {
             return ResultVo.error("更新交易记录失败");

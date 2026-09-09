@@ -49,7 +49,7 @@ public class UploadController {
     @Operation(summary = "上传文件", description = "上传文件到OSS，支持多种文件类型，最大50MB")
     @PostMapping("/file")
     public ResultVo uploadFile(@RequestParam("file") MultipartFile file) {
-        log.info("上传文件：{}", file.getOriginalFilename());
+        log.info("上传文件，fileName={}", file.getOriginalFilename());
         
         // 使用文件验证工具类进行验证
         String validationError = FileUploadValidator.validateFile(file);
@@ -72,12 +72,12 @@ public class UploadController {
             
             // 构建文件访问URL返回给前端
             String fileUrl = ossService.buildFileUrl(objectKey);
-            log.info("文件上传OSS成功，文件名：{}，ObjectKey：{}，URL：{}", 
+            log.info("文件上传OSS成功，fileName={}，objectKey={}，url={}", 
                 file.getOriginalFilename(), objectKey, fileUrl);
             
             return ResultVo.success("文件上传成功", fileUrl);
         } catch (Exception ex) {
-            log.error("文件上传失败，文件名：{}", file.getOriginalFilename(), ex);
+            log.error("文件上传失败，fileName={}", file.getOriginalFilename(), ex);
             return ResultVo.error("文件上传失败：" + ex.getMessage());
         }
     }
