@@ -1,365 +1,162 @@
-# 玺记 - 家庭记账本
+# 玺记（Xiji）家庭记账后端 - Spring Boot 开源记账 API
 
-![Java Version](https://img.shields.io/badge/OpenJdk-21-green.svg)
-![MySQL Version](https://img.shields.io/badge/MySQL-8.0+-orange.svg)
-![SpringBoot Version](https://img.shields.io/badge/SpringBoot-3.4.4-blue.svg)
-![Flutter Version](https://img.shields.io/badge/Flutter-3.0+-blue.svg)
+[![OpenJDK](https://img.shields.io/badge/OpenJDK-21-green.svg)](https://openjdk.org)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.4-6DB33F?logo=springboot)](https://spring.io/projects/spring-boot)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1?logo=mysql)](https://www.mysql.com)
+[![Redis](https://img.shields.io/badge/Redis-7.0+-DC382D?logo=redis)](https://redis.io)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## 项目介绍
+**Xiji** backend is an open-source **family finance / bookkeeping** API for a Flutter expense tracker.
 
-**玺记（Xiji）**是一款专为家庭定制的智能记账系统，采用**Spring Boot + Flutter**实现前后端分离架构。系统以直观的界面和强大的功能，帮助家庭精确追踪收支动态，提供智能统计分析，让家庭财务账本变得高效而简单。
+**玺记（Xiji）** 是一款开源家庭记账 / 家庭账本应用。本仓库是 Spring Boot 后端：JWT 鉴权、家庭协作、语音记账解析、微信 / 支付宝 / 京东账单导入、统计与月度预算。客户端见 Flutter 仓库。
 
-> **项目特点**：本项目是**纯AI开发**的项目，全程没有人员写过任何一行代码。开发过程中使用的IDE包括**Cursor**和**Trae**，充分利用AI的能力实现了从需求分析到代码生成的全流程自动化开发。
+应用界面见前端 README：[xiji_flutter](https://github.com/liberty-ask/xiji_flutter#界面预览)
 
-### 相关仓库
+## 相关仓库
 
-- **前端仓库**：[xiji_flutter](https://github.com/liberty-ask/xiji_flutter.git)（Flutter 跨平台应用）
-- **后端仓库**：[xiji](https://github.com/liberty-ask/xiji.git)（Spring Boot 后端服务）
+GitHub 为源仓库；Gitee 为同步镜像，内容以 GitHub 为准。
 
-### 核心优势
+| 端 | GitHub（源仓库） | Gitee（同步镜像） |
+| --- | --- | --- |
+| 后端（本仓库） | [liberty-ask/xiji](https://github.com/liberty-ask/xiji) | [liberty-warehouse/xiji](https://gitee.com/liberty-warehouse/xiji) |
+| 前端 Flutter | [liberty-ask/xiji_flutter](https://github.com/liberty-ask/xiji_flutter) | [liberty-warehouse/xiji_flutter](https://gitee.com/liberty-warehouse/xiji_flutter) |
 
-- **智能记账**：支持语音记账、图片识别记账，提高记账效率
-- **家庭协作**：支持多成员共同管理家庭财务，实时同步数据
-- **统计分析**：提供多维度财务统计报表，帮助家庭掌握财务状况
-- **预算管理**：支持设置家庭预算，实时监控预算执行情况
-- **数据安全**：采用JWT认证，数据加密存储，确保财务信息安全
+## API 能力
 
-## 系统架构
+- **认证**：手机号注册 / 登录 / 忘记密码；测试环境可不发短信，验证码直接返回前端
+- **家庭**：注册成功后自动创建第一个家庭；邀请码、扫码申请、审核、成员、退出、多家庭切换
+- **记账**：账单增删改查；语音文本由智谱 AI 解析为分类与金额
+- **账单导入**：微信 xlsx/xls、支付宝 csv、京东 csv；异步解析与导入（招行解析器入口已关闭）
+- **分类、统计、日历、月度预算**
+- **文件**：头像等上传至阿里云 OSS
 
-### 整体架构
+## 架构
 
 ```mermaid
-flowchart TD
-    A[Flutter前端] --> B[Spring Boot后端API]
-    B --> C[MySQL数据库]
-    B --> D[Redis缓存]
-    B --> E[阿里云OSS存储]
-    B --> F[智谱AI服务]
-    
-    subgraph 前端层
-    A
-    end
-    
-    subgraph 后端层
-    B
-    end
-    
-    subgraph 服务层
-    C
-    D
-    E
-    F
-    end
+flowchart LR
+  FlutterApp[Flutter客户端] --> Api[SpringBoot_API]
+  Api --> MySQL[(MySQL)]
+  Api --> Redis[(Redis)]
+  Api --> OSS[阿里云OSS]
+  Api --> Zhipu[智谱AI]
 ```
 
-### 后端架构
-
-- **Controller层**：处理HTTP请求，参数验证，返回响应
-- **Service层**：实现业务逻辑，处理核心功能
-- **Mapper层**：数据库操作，使用MyBatis Plus简化CRUD
-- **Entity层**：数据模型，对应数据库表结构
-- **DTO层**：数据传输对象，处理请求和响应数据
-- **Utils层**：工具类，提供通用功能
-- **Aspect层**：AOP切面，处理日志、权限等横切关注点
-
-### 前端架构
-
-- **Flutter框架**：跨平台移动应用开发
-- **状态管理**：Provider/Bloc
-- **网络请求**：Dio
-- **UI组件**：自定义组件 + Flutter内置组件
-- **数据存储**：SharedPreferences + SQLite
+分层：Controller → Service → Mapper（MyBatis-Plus）→ Entity / DTO。JWT 鉴权，AOP 处理日志等横切逻辑。
 
 ## 技术栈
 
-### 后端技术栈
-
 | 技术 | 版本 | 用途 |
-|------|------|------|
-| Spring Boot | 3.4.4 | 应用框架 |
-| MySQL | 8.0.26 | 关系型数据库 |
-| MyBatis + MyBatis Plus | 3.5.7 | ORM框架 |
-| Redis | 7.0+ | 缓存、会话管理 |
-| JWT | 0.12.5 | 身份认证 |
-| AOP | Spring AOP | 权限控制、日志记录 |
-| HikariCP | 5.1.0 | 数据库连接池 |
-| Alibaba Cloud OSS | 3.17.4 | 文件存储 |
-| 智谱AI SDK | 0.3.0 | 智能识别、语音处理 |
-| OpenJDK | 21 | Java运行环境 |
+| --- | --- | --- |
+| Spring Boot | 3.4.4 | Web API |
+| OpenJDK | 21 | 运行环境 |
+| MyBatis-Plus | 3.5.7 | ORM |
+| MySQL | 8.0+ | 数据存储 |
+| Redis | 7.0+ | 验证码与缓存 |
+| JJWT | 0.12.5 | Token |
+| HikariCP | Spring Boot 默认 | 连接池 |
+| 阿里云 OSS | 3.17.4 | 文件存储 |
+| 阿里云短信 | dysmsapi | 生产环境验证码 |
+| 智谱 AI SDK | 0.3.0 | 语音记账与导入分类 |
+| Apache POI / Commons CSV | 5.2.5 / 1.10.0 | 账单文件解析 |
+| SpringDoc OpenAPI | 2.3.0 | Swagger UI |
 
-### 前端技术栈
+## 本地运行
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| Flutter | 3.0+ | 跨平台移动应用框架 |
-| Dart | 3.0+ | 开发语言 |
-| Provider | 6.0+ | 状态管理 |
-| Dio | 5.0+ | 网络请求 |
-| SharedPreferences | 2.0+ | 本地存储 |
-| SQLite | - | 本地数据库 |
-| Flutter Chart | 1.0+ | 图表展示 |
+### 环境
 
-## 核心功能
-
-### 1. 用户管理
-
-- **注册登录**：支持手机号注册、验证码登录、密码登录
-- **个人中心**：修改个人信息、头像、密码
-- **权限管理**：基于JWT的身份认证，AOP权限控制
-
-### 2. 家庭管理
-
-- **创建家庭**：用户可创建多个家庭
-- **邀请成员**：通过手机号邀请家庭成员
-- **成员管理**：管理家庭成员，设置管理员权限
-- **家庭切换**：支持在多个家庭间快速切换
-
-### 3. 记账功能
-
-- **手动记账**：选择分类、金额、日期、备注
-- **语音记账**：通过语音识别自动生成记账记录
-- **图片识别**：上传账单图片，自动识别金额、分类
-- **批量导入**：支持导入微信账单、支付宝账单、京东账单等
-
-### 4. 分类管理
-
-- **默认分类**：系统提供常用收支分类
-- **自定义分类**：支持用户创建、修改、删除分类
-- **分类图标**：为分类设置个性化图标
-
-### 5. 统计分析
-
-- **收支概览**：月度、年度收支总览
-- **分类统计**：按分类统计收支占比
-- **趋势分析**：收支趋势图表展示
-- **成员统计**：家庭成员收支对比
-
-### 6. 预算管理
-
-- **设置预算**：为家庭或个人设置月度预算
-- **预算监控**：实时监控预算执行情况
-- **预算提醒**：预算超支提醒
-
-### 7. 数据安全
-
-- **数据加密**：敏感数据加密存储
-- **备份恢复**：支持数据备份和恢复
-- **登录保护**：登录失败次数限制，防止暴力破解
-
-## 安装部署
-
-### 后端部署
-
-#### 1. 环境准备
-
-- **JDK 21**：安装OpenJDK 21或Oracle JDK 21
-- **MySQL 8.0+**：安装MySQL 8.0或更高版本
-- **Redis 7.0+**：安装Redis 7.0或更高版本
-- **Maven 3.8+**：用于构建项目
-
-#### 2. 数据库配置
-
-1. **创建数据库**：
-   ```sql
-   CREATE DATABASE family_financial DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-   ```
-
-2. **导入数据库脚本**：
-   执行 `database_schema.sql` 文件，创建表结构
-
-#### 3. 项目配置
-
-1. **修改配置文件**：
-   - 开发环境：`src/main/resources/application-test.yml`
-   - 生产环境：`src/main/resources/application-active.yml`
-
-2. **设置环境变量**：
-   创建 `.env` 文件，配置敏感信息（详见 `.env.example`）
-
-#### 4. 构建运行
+- JDK 21
+- MySQL 8.0+
+- Redis 7.0+
+- Maven 3.8+
 
 ```bash
-# 构建项目
+git clone https://github.com/liberty-ask/xiji.git
+cd xiji
+```
+
+### 1. 建库并导入表结构
+
+配置里的库名由环境变量 `DB_NAME` 指定。本地可先建库再执行脚本：
+
+```sql
+CREATE DATABASE family_financial DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+然后导入仓库根目录的 [`database_schema.sql`](database_schema.sql)。
+
+### 2. 配置
+
+开发用 [`src/main/resources/application-test.yml`](src/main/resources/application-test.yml)，生产用 [`application-active.yml`](src/main/resources/application-active.yml)。敏感项走环境变量，不要把密钥写进仓库。
+
+| 变量 | 说明 |
+| --- | --- |
+| `DB_HOST` `DB_PORT` `DB_NAME` `DB_USERNAME` `DB_PASSWORD` | MySQL |
+| `REDIS_HOST` `REDIS_PORT` `REDIS_PASSWORD` `REDIS_DATABASE` | Redis |
+| `JWT_SIGN_KEY` | JWT 签名密钥 |
+| `ALIYUN_OSS_ENDPOINT` `ALIYUN_OSS_ACCESS_KEY_ID` `ALIYUN_OSS_ACCESS_KEY_SECRET` `ALIYUN_OSS_BUCKET_NAME` `ALIYUN_OSS_CUSTOM_DOMAIN` `ALIYUN_OSS_FOLDER` | 对象存储 |
+| `ZHIPU_AI_API_KEY` `ZHIPU_AI_MODEL` | 智谱（语音解析、导入分类） |
+| `CORS_ALLOWED_ORIGINS` | 允许的前端来源 |
+
+测试 profile 中短信默认关闭（`custom.sms.enable: false`），验证码会返回给客户端，便于本地调试。
+
+Windows PowerShell 示例：
+
+```powershell
+$env:DB_HOST="127.0.0.1"
+$env:DB_PORT="3306"
+$env:DB_NAME="family_financial"
+$env:DB_USERNAME="root"
+$env:DB_PASSWORD="your_password"
+$env:REDIS_HOST="127.0.0.1"
+$env:REDIS_PORT="6379"
+$env:REDIS_PASSWORD=""
+$env:REDIS_DATABASE="0"
+$env:JWT_SIGN_KEY="replace-with-a-long-secret"
+$env:CORS_ALLOWED_ORIGINS="*"
+```
+
+OSS 与智谱密钥按你实际账号填写。未配置时，头像上传和 AI 解析相关接口会失败，记账主流程仍可联调。
+
+### 3. 启动
+
+服务端口 **8089**（见 [`application.yml`](src/main/resources/application.yml)）。本地请显式使用 test profile：
+
+```bash
 mvn clean package -DskipTests
-
-# 运行项目（开发环境）
 java -jar target/xiji-1.0.0.jar --spring.profiles.active=test
-
-# 运行项目（生产环境）
-java -jar target/xiji-1.0.0.jar --spring.profiles.active=active
 ```
 
-### 前端部署
-
-#### 1. 环境准备
-
-- **Flutter 3.0+**：安装Flutter SDK
-- **Dart 3.0+**：Flutter内置
-- **Android Studio**：用于Android开发
-- **Xcode**：用于iOS开发（仅Mac）
-
-#### 2. 项目配置
-
-1. **修改API地址**：
-   修改 `lib/config/api_config.dart` 中的API地址
-
-2. **配置其他参数**：
-   根据需要修改 `lib/config/app_config.dart` 中的配置
-
-#### 3. 构建运行
+或：
 
 ```bash
-# 安装依赖
-flutter pub get
-
-# 运行项目
-flutter run
-
-# 构建Android APK
-flutter build apk
-
-# 构建iOS IPA
-flutter build ios
+mvn spring-boot:run -Dspring-boot.run.profiles=test
 ```
 
-## 使用说明
+### API 文档
 
-### 1. 首次使用
+开发环境：<http://localhost:8089/swagger-ui.html>
 
-1. **注册账号**：使用手机号注册，获取验证码
-2. **创建家庭**：注册成功后，创建第一个家庭
-3. **设置预算**：为家庭设置月度预算
-4. **开始记账**：选择记账方式，开始记录收支
-
-### 2. 示例登录
-
-为了方便用户快速体验系统，提供以下示例账号：
-- **手机号**：13333333333
-- **密码**：1234567
-
-> **注意**：示例账号仅用于体验系统功能，请勿用于生产环境。
-
-### 2. 日常使用
-
-- **记账**：点击首页"+"按钮，选择记账方式
-- **查看统计**：点击底部导航栏"统计"，查看财务报表
-- **管理家庭**：点击底部导航栏"我的"，进入家庭管理
-- **邀请成员**：在家庭管理中，点击"邀请成员"，输入手机号邀请
-
-### 3. 高级功能
-
-- **语音记账**：点击语音记账按钮，说出收支信息
-- **图片识别**：点击图片记账按钮，拍摄或选择账单图片
-- **批量导入**：在"我的"页面，点击"账单导入"，选择导入方式
-- **数据备份**：在"我的"页面，点击"数据备份"，选择备份方式
-
-## API文档
-
-系统集成了SpringDoc OpenAPI 3，提供API文档：
-
-- **开发环境**：`http://localhost:8089/swagger-ui.html`
-- **生产环境**：默认关闭，可在配置文件中开启
-
-## 开发指南
-
-### 代码规范
-
-- **Java**：遵循阿里巴巴Java开发规范
-- **Dart**：遵循Flutter官方代码规范
-- **Git**：使用Git Flow工作流
-
-### 提交规范
-
-```
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
-```
-
-- **type**：feat（新功能）、fix（修复）、docs（文档）、style（格式）、refactor（重构）、test（测试）、chore（构建）
-- **scope**：功能模块
-- **subject**：提交摘要
-- **body**：详细描述
-- **footer**：关联issue等
-
-### 测试
-
-- **单元测试**：`src/test/java` 目录下
-- **集成测试**：使用Postman或Swagger UI测试API
+生产 profile 可按配置关闭 Swagger。客户端 Debug 默认请求 `http://127.0.0.1:8089/api`。
 
 ## 常见问题
 
-### 1. 无法启动后端服务
-
-- 检查数据库连接配置是否正确
-- 检查Redis服务是否运行
-- 检查环境变量是否设置
-
-### 2. 前端无法连接后端
-
-- 检查API地址配置是否正确
-- 检查网络连接是否正常
-- 检查后端服务是否启动
-
-### 3. 记账数据不同步
-
-- 检查网络连接是否正常
-- 尝试手动同步数据
-- 检查家庭成员权限是否正确
-
-## 贡献指南
-
-1. **Fork** 本仓库
-2. **Clone** 到本地
-3. **Create** 新分支（`git checkout -b feat/xxx`）
-4. **Commit** 代码（`git commit -m "feat: 描述"`）
-5. **Push** 到远程（`git push origin feat/xxx`）
-6. **Create** Pull Request
+- **启动失败**：检查 MySQL / Redis 是否已启动，以及上表环境变量是否齐全。
+- **前端连不上**：确认后端已在 8089 监听；真机请把 Flutter 里的 `127.0.0.1` 改成电脑局域网 IP。
+- **验证码收不到**：test profile 默认不发短信，看接口返回或日志中的验证码。
+- **账单导入失败**：确认文件格式（微信 xlsx/xls、支付宝/京东 csv），并检查智谱 API Key 是否可用于分类。
 
 ## 许可证
 
-本项目采用 **MIT License** 开源协议。
+[MIT License](LICENSE)。可商用、可修改、可再分发，需保留版权与许可声明。
 
-```
-MIT License
+## 贡献
 
-Copyright (c) 2026 玺记团队
+请在 GitHub 源仓库参与： [liberty-ask/xiji](https://github.com/liberty-ask/xiji)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-## 联系方式
-
-- **作者**：liberty
-- **QQ**：1014434012
-- **邮箱**：1014434012@qq.com
-
-## 鸣谢
-
-- **Spring Boot**：提供强大的后端框架
-- **Flutter**：提供跨平台移动开发能力
-- **MyBatis Plus**：简化数据库操作
-- **智谱AI**：提供智能识别能力
-- **阿里云**：提供OSS存储服务
+1. Fork GitHub 仓库
+2. 新建分支（例如 `feat/xxx` 或 `fix/xxx`）
+3. 提交变更并向 GitHub 发起 Pull Request
 
 ---
 
-**玺记** - 让家庭财务管理更简单
+**玺记** — 温馨家庭，共同记账
