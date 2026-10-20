@@ -2,6 +2,7 @@ package com.xiji.config.exception;
 
 import com.xiji.common.response.ResultVo;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -62,11 +63,12 @@ public class GlobalExceptionHandler {
         return ResultVo.error(errorMessage);
     }
 
-    // 处理权限不足，UnauthorizedException
+    // 处理权限不足/未登录，UnauthorizedException：未登录类返回401，权限不足类返回403
     @ExceptionHandler(UnauthorizedException.class)
-    public ResultVo handleUnauthorizedException(UnauthorizedException ex) {
-        log.warn("权限不足，message={}", ex.getMessage());
-        return ResultVo.error("用户没有权限访问：" + ex.getMessage());
+    public ResponseEntity<ResultVo> handleUnauthorizedException(UnauthorizedException ex) {
+        log.warn("鉴权失败，status={}，message={}", ex.getStatus(), ex.getMessage());
+        return ResponseEntity.status(ex.getStatus())
+                .body(ResultVo.error(ex.getStatus(), "用户没有权限访问：" + ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

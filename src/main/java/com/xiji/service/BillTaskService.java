@@ -20,11 +20,4 @@ public interface BillTaskService extends IService<BillTask> {
      * @param errorMessage 错误信息
      */
     void updateTaskStatus(Long taskId, Integer status, Integer progress, Integer totalCount, Integer successCount, Integer failCount, String errorMessage);
-
-    /**
-     * 获取用户的任务列表
-     * @param userId 用户ID
-     * @return 任务列表
-     */
-    java.util.List<BillTask> getTaskListByUser(Long userId);
 }

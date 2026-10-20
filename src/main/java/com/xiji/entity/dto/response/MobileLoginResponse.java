@@ -8,10 +8,15 @@ import lombok.Data;
 @Data
 public class MobileLoginResponse {
     /**
-     * JWT Token
+     * access token（短有效期）
      */
-    private String token;
-    
+    private String accessToken;
+
+    /**
+     * refresh token（长有效期，用于换取新token）
+     */
+    private String refreshToken;
+
     /**
      * 用户信息
      */

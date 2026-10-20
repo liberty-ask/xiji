@@ -63,6 +63,11 @@ public class JwtSecurityConfig implements CommandLineRunner {
         } else {
             log.info("JWT密钥配置检查通过，keyLength={}", signKey.length());
         }
+
+        // 打印token时长配置
+        log.info("Token时长配置：accessExpire={}ms，refreshExpire={}ms",
+                jwtConfig != null && jwtConfig.getAccessExpire() != null ? jwtConfig.getAccessExpire() : 7200000L,
+                jwtConfig != null && jwtConfig.getRefreshExpire() != null ? jwtConfig.getRefreshExpire() : 2592000000L);
     }
 }
 

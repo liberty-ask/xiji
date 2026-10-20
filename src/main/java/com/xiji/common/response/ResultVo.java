@@ -56,5 +56,12 @@ public class ResultVo {
         return resultVo;
     }
 
+    public static ResultVo error(int code, String msg) {
+        ResultVo resultVo = new ResultVo();
+        resultVo.setCode(code);
+        resultVo.setMessage(msg);
+        return resultVo;
+    }
+
 }
 

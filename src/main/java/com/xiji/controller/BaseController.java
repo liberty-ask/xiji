@@ -5,8 +5,6 @@ import com.xiji.entity.domain.FamilyMember;
 import com.xiji.entity.domain.User;
 import com.xiji.service.FamilyMemberService;
 import com.xiji.service.UserService;
-import com.xiji.utils.JwtUtils;
-import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,46 +25,13 @@ public abstract class BaseController {
 
     /**
      * 从请求中获取当前用户ID
+     * 由LoginCheckFilter解析token后写入request attribute，此处直接读取
      * @param request HttpServletRequest
      * @return 用户ID，如果未登录或token无效返回null
      */
     protected Long getCurrentUserId(HttpServletRequest request) {
-        String token = request.getHeader("token");
-        if (token == null || token.isEmpty()) {
-            String authHeader = request.getHeader("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                token = authHeader.substring(7);
-            }
-        }
-
-        if (token == null || token.isEmpty()) {
-            return null;
-        }
-
-        Claims claims = JwtUtils.parseJwt(token);
-        if (claims == null) {
-            return null;
-        }
-
-        Object idObj = claims.get("id");
-        if (idObj == null) {
-            return null;
-        }
-
-        if (idObj instanceof Long) {
-            return (Long) idObj;
-        } else if (idObj instanceof Number) {
-            return ((Number) idObj).longValue();
-        } else if (idObj instanceof String) {
-            try {
-                return Long.parseLong((String) idObj);
-            } catch (NumberFormatException e) {
-                log.warn("无法解析用户ID，id={}", idObj);
-                return null;
-            }
-        }
-
-        return null;
+        Object userId = request.getAttribute("userId");
+        return userId instanceof Long ? (Long) userId : null;
     }
 
     /**

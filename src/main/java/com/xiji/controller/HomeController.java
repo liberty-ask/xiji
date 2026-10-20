@@ -1,16 +1,17 @@
 package com.xiji.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.xiji.entity.domain.Transactions;
-import com.xiji.entity.domain.Category;
-import com.xiji.entity.domain.User;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.xiji.common.response.ResultVo;
 import com.xiji.entity.domain.Budget;
+import com.xiji.entity.domain.Category;
+import com.xiji.entity.domain.Transactions;
+import com.xiji.entity.domain.User;
 import com.xiji.entity.dto.response.HomeResponse;
-import com.xiji.service.TransactionsService;
 import com.xiji.service.BudgetService;
 import com.xiji.service.CategoryService;
+import com.xiji.service.TransactionsService;
 import com.xiji.service.UserService;
-import com.xiji.common.response.ResultVo;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,20 +20,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * 首页统计
+ * @author liberty
  */
 @RestController
 @RequestMapping("/api/v1")
@@ -65,64 +65,49 @@ public class HomeController extends BaseController {
         LocalDate firstDayOfMonth = currentYearMonth.atDay(1);
         LocalDate lastDayOfMonth = currentYearMonth.atEndOfMonth();
 
-        // 查询本月所有交易
-        LambdaQueryWrapper<Transactions> monthQuery = new LambdaQueryWrapper<>();
-        monthQuery.eq(Transactions::getFamilyId, familyId)
-                .ge(Transactions::getDate, firstDayOfMonth)
-                .le(Transactions::getDate, lastDayOfMonth);
-        List<Transactions> monthTransactions = transactionsService.list(monthQuery);
-
-        // 统计本月收入和支出
-        BigDecimal totalIncome = monthTransactions.stream()
-                .filter(t -> t.getType() != null && t.getType() == 0 && t.getAmount() != null)
-                .map(Transactions::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalExpense = monthTransactions.stream()
-                .filter(t -> t.getType() != null && t.getType() == 1 && t.getAmount() != null)
-                .map(Transactions::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // 按类型聚合本月收支（数据库内SUM，排除不计收支类型）
+        QueryWrapper<Transactions> monthAggQuery = new QueryWrapper<>();
+        monthAggQuery.select("type", "SUM(amount) AS total")
+                .eq("family_id", familyId)
+                .ge("date", firstDayOfMonth)
+                .le("date", lastDayOfMonth)
+                .in("type", 0, 1)
+                .groupBy("type");
+        BigDecimal totalIncome = BigDecimal.ZERO;
+        BigDecimal totalExpense = BigDecimal.ZERO;
+        for (Map<String, Object> row : transactionsService.listMaps(monthAggQuery)) {
+            Object typeObj = row.get("type");
+            if (typeObj == null) {
+                continue;
+            }
+            int type = ((Number) typeObj).intValue();
+            if (type == 0) {
+                totalIncome = toBigDecimal(row.get("total"));
+            } else if (type == 1) {
+                totalExpense = toBigDecimal(row.get("total"));
+            }
+        }
 
         // 计算余额（收入-支出）
         BigDecimal balance = totalIncome.subtract(totalExpense);
 
-        // 查询今日支出
-        LocalDate today = now;
-        LambdaQueryWrapper<Transactions> todayQuery = new LambdaQueryWrapper<>();
-        todayQuery.eq(Transactions::getFamilyId, familyId)
-                .eq(Transactions::getDate, today)
-                .eq(Transactions::getType, 1);
-        List<Transactions> todayTransactions = transactionsService.list(todayQuery);
-        BigDecimal todayExpense = todayTransactions.stream()
-                .filter(t -> t.getAmount() != null)
-                .map(Transactions::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // 查询昨日支出
-        LocalDate yesterday = now.minusDays(1);
-        LambdaQueryWrapper<Transactions> yesterdayQuery = new LambdaQueryWrapper<>();
-        yesterdayQuery.eq(Transactions::getFamilyId, familyId)
-                .eq(Transactions::getDate, yesterday)
-                .eq(Transactions::getType, 1);
-        List<Transactions> yesterdayTransactions = transactionsService.list(yesterdayQuery);
-        BigDecimal yesterdayExpense = yesterdayTransactions.stream()
-                .filter(t -> t.getAmount() != null)
-                .map(Transactions::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // 今日/昨日支出（数据库内SUM）
+        BigDecimal todayExpense = sumExpenseByDate(familyId, now);
+        BigDecimal yesterdayExpense = sumExpenseByDate(familyId, now.minusDays(1));
 
         // 获取本月支出预算
         Budget budgetEntity = budgetService.getBudget(familyId);
-        BigDecimal budgetTotal = budgetEntity != null && budgetEntity.getAmount() != null 
-                ? budgetEntity.getAmount() 
+        BigDecimal budgetTotal = budgetEntity != null && budgetEntity.getAmount() != null
+                ? budgetEntity.getAmount()
                 : BigDecimal.ZERO;
 
         // 构建响应
         HomeResponse response = new HomeResponse();
-        response.setBalance(formatAmount(balance));
-        response.setIncome(formatAmount(totalIncome));
-        response.setExpense(formatAmount(totalExpense));
-        response.setTodayExpense(formatAmount(todayExpense));
-        response.setYesterdayExpense(formatAmount(yesterdayExpense));
+        response.setBalance(balance);
+        response.setIncome(totalIncome);
+        response.setExpense(totalExpense);
+        response.setTodayExpense(todayExpense);
+        response.setYesterdayExpense(yesterdayExpense);
 
         // 预算信息
         HomeResponse.BudgetInfo budgetInfo = new HomeResponse.BudgetInfo();
@@ -130,7 +115,7 @@ public class HomeController extends BaseController {
         budgetInfo.setTotal(budgetTotal);
         response.setBudget(budgetInfo);
 
-        // 最近活动（最近10条交易记录，按创建时间倒序）
+        // 最近活动（最近10条交易记录，按日期和创建时间倒序）
         LambdaQueryWrapper<Transactions> recentQuery = new LambdaQueryWrapper<>();
         recentQuery.eq(Transactions::getFamilyId, familyId)
                 .orderByDesc(Transactions::getDate)
@@ -139,76 +124,80 @@ public class HomeController extends BaseController {
                 .last("LIMIT 10");
         List<Transactions> recentTransactions = transactionsService.list(recentQuery);
 
-        // 获取所有相关的分类和用户信息
-        Map<Long, Category> categoryMap = new HashMap<>();
-        Map<Long, User> userMap = new HashMap<>();
-        
-        for (Transactions transaction : recentTransactions) {
-            if (transaction.getCategoryId() != null && !categoryMap.containsKey(transaction.getCategoryId())) {
-                Category category = categoryService.getById(transaction.getCategoryId());
-                if (category != null) {
-                    categoryMap.put(transaction.getCategoryId(), category);
-                }
-            }
-            if (transaction.getCreatedBy() != null && !userMap.containsKey(transaction.getCreatedBy())) {
-                User user = userService.getById(transaction.getCreatedBy());
-                if (user != null) {
-                    userMap.put(transaction.getCreatedBy(), user);
-                }
-            }
-        }
+        // 批量查询相关分类和用户信息（避免循环点查）
+        Set<Long> categoryIds = recentTransactions.stream()
+                .map(Transactions::getCategoryId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, Category> categoryMap = categoryIds.isEmpty() ? Map.of()
+                : categoryService.listByIds(categoryIds).stream()
+                    .collect(Collectors.toMap(Category::getId, c -> c));
+        Set<Long> userIds = recentTransactions.stream()
+                .map(Transactions::getCreatedBy)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, User> userMap = userIds.isEmpty() ? Map.of()
+                : userService.listByIds(userIds).stream()
+                    .collect(Collectors.toMap(User::getId, u -> u));
 
         // 转换为活动项
         List<HomeResponse.ActivityItem> activities = recentTransactions.stream().map(transaction -> {
             HomeResponse.ActivityItem item = new HomeResponse.ActivityItem();
-            
-            // 标题：优先使用分类名称，否则使用描述
-            Category category = transaction.getCategoryId() != null 
-                    ? categoryMap.get(transaction.getCategoryId()) 
+            // 标题：分类名 > 描述 > 默认（查询已排除type=2的不计收支交易）
+            Category category = transaction.getCategoryId() != null
+                    ? categoryMap.get(transaction.getCategoryId())
                     : null;
-            if (category != null && category.getName() != null) {
+            if (category != null) {
                 item.setTitle(category.getName());
-                item.setIcon(category.getIcon());
+                item.setIcon(category.getIcon() != null ? category.getIcon() : "payments");
             } else {
-                item.setTitle(transaction.getDescription() != null && !transaction.getDescription().isEmpty() 
-                        ? transaction.getDescription() 
-                        : (transaction.getType() == 0 ? "收入" : "支出"));
-                item.setIcon(null);
+                item.setTitle(transaction.getDescription() != null ? transaction.getDescription() : "支出");
+                item.setIcon("payments");
             }
-            
-            // 用户名称
-            User user = transaction.getCreatedBy() != null 
-                    ? userMap.get(transaction.getCreatedBy()) 
-                    : null;
-            item.setUser(user != null && user.getName() != null ? user.getName() 
-                    : (user != null && user.getUsername() != null ? user.getUsername() : "未知用户"));
-            
-            // 时间（HH:mm格式）
-            LocalDateTime createdAt = transaction.getCreatedAt();
-            if (createdAt != null) {
-                item.setTime(createdAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+
+            // 用户名
+            User user = transaction.getCreatedBy() != null ? userMap.get(transaction.getCreatedBy()) : null;
+            String userName;
+            if (user != null && user.getName() != null) {
+                userName = user.getName();
+            } else if (user != null && user.getUsername() != null) {
+                userName = user.getUsername();
+            } else {
+                userName = "未知用户";
+            }
+            item.setUser(userName);
+
+            // 时间
+            if (transaction.getCreatedAt() != null) {
+                item.setTime(transaction.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
             } else if (transaction.getDate() != null) {
-                item.setTime(LocalTime.of(0, 0).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+                // 无创建时间时用交易日期当天的00:00
+                item.setTime(transaction.getDate().atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
             } else {
                 item.setTime("00:00");
             }
-            LocalDate transactionDate = transaction.getDate();
-            if ( transactionDate != null) {
-                item.setDate(transactionDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+
+            // 日期
+            if (transaction.getDate() != null) {
+                item.setDate(transaction.getDate().toString());
             }
 
-            // 金额（带+/-号）
-            boolean isIncome = transaction.getType() != null && transaction.getType() == 0;
-            item.setIsIncome(isIncome);
-            if (transaction.getAmount() != null) {
-                String amountStr = formatAmount(transaction.getAmount());
-                item.setAmount(isIncome ? "+" + amountStr : "-" + amountStr);
-            } else {
-                item.setAmount(isIncome ? "+0" : "-0");
+            // 金额（数值，正负号由客户端根据isIncome拼接）
+            item.setAmount(transaction.getAmount() != null ? transaction.getAmount() : BigDecimal.ZERO);
+
+            // 是否收入
+            item.setIsIncome(transaction.getType() != null && transaction.getType() == 0);
+
+            // 交易对方
+            if (transaction.getCounterparty() != null && !transaction.getCounterparty().isEmpty()) {
+                item.setCounterparty(transaction.getCounterparty());
             }
-            item.setDescription(transaction.getDescription());
-            // 交易方
-            item.setCounterparty(transaction.getCounterparty());
+
+            // 描述
+            if (transaction.getDescription() != null && !transaction.getDescription().isEmpty()) {
+                item.setDescription(transaction.getDescription());
+            }
+
             return item;
         }).collect(Collectors.toList());
 
@@ -218,16 +207,31 @@ public class HomeController extends BaseController {
     }
 
     /**
-     * 格式化金额为字符串（千分位格式化）
+     * 按日期统计家庭支出总额（数据库内SUM）
      */
-    private String formatAmount(BigDecimal amount) {
-        if (amount == null) {
-            return "0";
+    private BigDecimal sumExpenseByDate(Long familyId, LocalDate date) {
+        QueryWrapper<Transactions> query = new QueryWrapper<>();
+        query.select("COALESCE(SUM(amount), 0) AS total")
+                .eq("family_id", familyId)
+                .eq("type", 1)
+                .eq("date", date);
+        List<Map<String, Object>> rows = transactionsService.listMaps(query);
+        if (rows.isEmpty()) {
+            return BigDecimal.ZERO;
         }
-        NumberFormat formatter = NumberFormat.getInstance();
-        formatter.setGroupingUsed(true);
-        formatter.setMaximumFractionDigits(2);
-        formatter.setMinimumFractionDigits(2);
-        return formatter.format(amount);
+        return toBigDecimal(rows.get(0).get("total"));
+    }
+
+    /**
+     * 将聚合查询结果转为BigDecimal（兼容不同驱动的数值类型）
+     */
+    private BigDecimal toBigDecimal(Object value) {
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
+        if (value instanceof BigDecimal) {
+            return (BigDecimal) value;
+        }
+        return new BigDecimal(value.toString());
     }
 }

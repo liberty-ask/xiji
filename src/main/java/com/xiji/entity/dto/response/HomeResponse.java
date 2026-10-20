@@ -12,34 +12,34 @@ import java.util.List;
 @Data
 public class HomeResponse {
     /**
-     * 可用余额（字符串，已格式化）
+     * 可用余额（数值，格式化由客户端负责）
      */
-    private String balance;
-    
+    private BigDecimal balance;
+
     /**
-     * 总收入（字符串，已格式化）
+     * 总收入（数值，格式化由客户端负责）
      */
-    private String income;
-    
+    private BigDecimal income;
+
     /**
-     * 总支出（字符串，已格式化）
+     * 总支出（数值，格式化由客户端负责）
      */
-    private String expense;
-    
+    private BigDecimal expense;
+
     /**
      * 预算信息
      */
     private BudgetInfo budget;
-    
+
     /**
-     * 今日支出（字符串，已格式化）
+     * 今日支出（数值，格式化由客户端负责）
      */
-    private String todayExpense;
-    
+    private BigDecimal todayExpense;
+
     /**
-     * 昨日支出（字符串，已格式化）
+     * 昨日支出（数值，格式化由客户端负责）
      */
-    private String yesterdayExpense;
+    private BigDecimal yesterdayExpense;
     
     /**
      * 最近活动列表
@@ -88,9 +88,9 @@ public class HomeResponse {
         private String date;
 
         /**
-         * 金额（字符串，带+/-号）
+         * 金额（数值，正负号由客户端根据isIncome拼接）
          */
-        private String amount;
+        private BigDecimal amount;
         
         /**
          * 图标

@@ -8,11 +8,13 @@ import com.xiji.entity.domain.User;
 import com.xiji.entity.dto.request.ForgotPasswordRequest;
 import com.xiji.entity.dto.request.MobileLoginRequest;
 import com.xiji.entity.dto.request.MobileRegisterRequest;
+import com.xiji.entity.dto.request.RefreshTokenRequest;
 import com.xiji.entity.dto.request.SendSmsCodeRequest;
 import com.xiji.entity.dto.response.MobileLoginResponse;
 import com.xiji.entity.dto.response.MobileUserResponse;
 import com.xiji.service.FamilyMemberService;
 import com.xiji.service.FamilyService;
+import com.xiji.service.RefreshTokenService;
 import com.xiji.service.SmsService;
 import com.xiji.service.SmsService.SmsSendResult;
 import com.xiji.service.UserService;
@@ -21,10 +23,13 @@ import com.xiji.utils.JwtUtils;
 import com.xiji.utils.LoginAttemptUtils;
 import com.xiji.utils.PasswordUtils;
 import com.xiji.utils.ValidationUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.bind.annotation.*;
@@ -47,6 +52,7 @@ public class MobileAuthController {
     private final FamilyService familyService;
     private final FamilyMemberService familyMemberService;
     private final LoginAttemptUtils loginAttemptUtils;
+    private final RefreshTokenService refreshTokenService;
 
     /**
      * 发送登录验证码
@@ -203,13 +209,64 @@ public class MobileAuthController {
         Map<String, Object> claims = new HashMap<>();
         claims.put("username", user.getUsername());
         claims.put("id", user.getId());
-        String token = JwtUtils.generateJwt(claims);
-        
-        response.setToken(token);
+        // 双token：access（短有效期）+ refresh（长有效期）
+        response.setAccessToken(JwtUtils.generateJwt(claims, JwtUtils.getAccessExpire()));
+        response.setRefreshToken(refreshTokenService.generate(user.getId()));
         response.setUser(userResponse);
 
         log.info("用户登录成功，userId={}，mode={}", user.getId(), mode);
         return ResultVo.success("登录成功", response);
+    }
+
+    /**
+     * 刷新token（免access token鉴权，凭refresh token校验）
+     * POST /refresh
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<ResultVo> refresh(@RequestBody(required = false) RefreshTokenRequest request) {
+        String refreshToken = request != null ? request.getRefreshToken() : null;
+        if (StringUtils.isEmpty(refreshToken)) {
+            // 无refresh token，引导重新登录
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResultVo.error(401, "缺少刷新凭证，请重新登录"));
+        }
+
+        Long userId = refreshTokenService.validate(refreshToken);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResultVo.error(401, "登录已过期，请重新登录"));
+        }
+
+        User user = userService.getById(userId);
+        if (user == null || (user.getStatus() != null && user.getStatus() == 1)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResultVo.error(401, "用户不存在或已被禁用，请重新登录"));
+        }
+
+        // 轮换refresh token并签发新access token
+        String newRefreshToken = refreshTokenService.rotate(refreshToken, userId);
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("username", user.getUsername());
+        claims.put("id", user.getId());
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("accessToken", JwtUtils.generateJwt(claims, JwtUtils.getAccessExpire()));
+        data.put("refreshToken", newRefreshToken);
+        return ResponseEntity.ok(ResultVo.success("刷新成功", data));
+    }
+
+    /**
+     * 登出（要求有效access token）
+     * POST /logout
+     */
+    @PostMapping("/logout")
+    public ResultVo logout(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        if (userId != null) {
+            refreshTokenService.revokeAll(userId);
+            log.info("用户登出，已全端撤销refresh token，userId={}", userId);
+        }
+        return ResultVo.success("登出成功");
     }
 
     /**
@@ -296,11 +353,12 @@ public class MobileAuthController {
             Map<String, Object> claims = new HashMap<>();
             claims.put("username", user.getUsername());
             claims.put("id", user.getId());
-            String token = JwtUtils.generateJwt(claims);
-            
+
             // 构建响应
             MobileLoginResponse response = new MobileLoginResponse();
-            response.setToken(token);
+            // 双token：access（短有效期）+ refresh（长有效期）
+            response.setAccessToken(JwtUtils.generateJwt(claims, JwtUtils.getAccessExpire()));
+            response.setRefreshToken(refreshTokenService.generate(user.getId()));
             
             MobileUserResponse userResponse = new MobileUserResponse();
             userResponse.setId(user.getId());

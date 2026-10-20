@@ -1,5 +1,7 @@
 package com.xiji.entity.dto.response;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 
 /**
@@ -7,6 +9,17 @@ import lombok.Data;
  */
 @Data
 public class MobileProfileResponse {
+    /**
+     * 用户ID
+     */
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long id;
+
+    /**
+     * 手机号
+     */
+    private String phone;
+
     /**
      * 昵称
      */
@@ -25,7 +38,8 @@ public class MobileProfileResponse {
     /**
      * 家庭ID
      */
-    private String familyId;
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long familyId;
     
     /**
      * 待审核申请数量（仅管理员有此字段）

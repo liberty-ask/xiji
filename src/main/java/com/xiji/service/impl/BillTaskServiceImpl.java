@@ -43,12 +43,4 @@ public class BillTaskServiceImpl extends ServiceImpl<BillTaskMapper, BillTask> i
         
         updateById(task);
     }
-
-    @Override
-    public List<BillTask> getTaskListByUser(Long userId) {
-        LambdaQueryWrapper<BillTask> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(BillTask::getUserId, userId);
-        queryWrapper.orderByDesc(BillTask::getCreatedAt);
-        return list(queryWrapper);
-    }
 }

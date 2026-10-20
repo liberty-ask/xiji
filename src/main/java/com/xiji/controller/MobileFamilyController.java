@@ -21,6 +21,7 @@ import com.xiji.entity.dto.response.MobileProfileResponse;
 import com.xiji.service.FamilyApplicationService;
 import com.xiji.service.FamilyMemberService;
 import com.xiji.service.FamilyService;
+import com.xiji.service.RefreshTokenService;
 import com.xiji.service.UserService;
 import com.xiji.utils.AvatarUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,6 +51,7 @@ public class MobileFamilyController extends BaseController {
     private final FamilyService familyService;
     private final FamilyApplicationService familyApplicationService;
     private final FamilyMemberService familyMemberService;
+    private final RefreshTokenService refreshTokenService;
 
     /**
      * 获取用户的所有家庭列表
@@ -89,27 +91,6 @@ public class MobileFamilyController extends BaseController {
         }).collect(Collectors.toList());
 
         return ResultVo.success(responseList);
-    }
-
-    /**
-     * 获取用户当前家庭信息
-     */
-    @GetMapping("/families/detail")
-    public ResultVo getCurrentFamily(HttpServletRequest request) {
-        Long userId = getCurrentUserId(request);
-        if (userId == null) {
-            return ResultVo.error("用户未登录");
-        }
-        Long currentFamilyId = getCurrentFamilyId(userId);
-        if (currentFamilyId == null) {
-            return ResultVo.error("请先选择家庭");
-        }
-        Family family = familyService.getById(currentFamilyId);
-        if (family == null) {
-            return ResultVo.error("家庭不存在");
-        }
-        return ResultVo.success(family);
-
     }
 
     /**
@@ -342,6 +323,8 @@ public class MobileFamilyController extends BaseController {
         }
 
         MobileProfileResponse response = new MobileProfileResponse();
+        response.setId(user.getId());
+        response.setPhone(user.getPhone());
         response.setNickname(user.getName() != null ? user.getName() : user.getUsername());
         response.setEmail(user.getEmail());
         // 从当前家庭获取角色
@@ -357,7 +340,7 @@ public class MobileFamilyController extends BaseController {
         
         // 设置当前选择的家庭ID
         if (user.getCurrentFamilyId() != null) {
-            response.setFamilyId(String.valueOf(user.getCurrentFamilyId()));
+            response.setFamilyId(user.getCurrentFamilyId());
             
             // 如果是家庭管理员，返回待审核申请数量
             if (role == 1) {
@@ -408,6 +391,8 @@ public class MobileFamilyController extends BaseController {
         // 更新时间由MyBatis-Plus自动填充
         
         if (userService.updateById(user)) {
+            // 修改密码成功后撤销全部refresh token（全端下线）
+            refreshTokenService.revokeAll(userId);
             return ResultVo.success("密码修改成功");
         } else {
             return ResultVo.error("密码修改失败");

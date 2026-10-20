@@ -31,7 +31,12 @@ public class MobileTransactionResponse {
      * 分类名称
      */
     private String category;
-    
+
+    /**
+     * 分类图标名（前端据此渲染分类图标）
+     */
+    private String icon;
+
     /**
      * 日期
      */

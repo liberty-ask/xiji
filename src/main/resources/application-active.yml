@@ -65,7 +65,12 @@ springdoc:
 custom:
   jwt:
     sign-key: ${JWT_SIGN_KEY}
+    # web端 token 有效期（毫秒），7天
     expire: 604800000
+    # access token 有效期（毫秒），默认2小时
+    access-expire: 7200000
+    # refresh token 有效期（毫秒），默认30天
+    refresh-expire: 2592000000
   redis:
     # 验证码过期时间（秒）
     captcha-expire: 300

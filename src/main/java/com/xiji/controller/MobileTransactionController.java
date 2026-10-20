@@ -29,6 +29,9 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -145,6 +148,15 @@ public class MobileTransactionController extends BaseController {
         Page<Transactions> page = new Page<>(currentPage, pageSize);
         IPage<Transactions> pageResult = transactionsService.page(page, queryWrapper);
 
+        // 批量查询分类信息（避免循环点查）
+        Set<Long> categoryIds = pageResult.getRecords().stream()
+                .map(Transactions::getCategoryId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, Category> categoryMap = categoryIds.isEmpty() ? Map.of()
+                : categoryService.listByIds(categoryIds).stream()
+                    .collect(Collectors.toMap(Category::getId, c -> c));
+
         // 转换为响应DTO
         List<MobileTransactionResponse> transactionResponses = pageResult.getRecords().stream()
                 .map(t -> {
@@ -152,8 +164,9 @@ public class MobileTransactionController extends BaseController {
                     response.setId(t.getId());
                     response.setType(t.getType());
                     response.setAmount(t.getAmount());
-                    Category cat = categoryService.getById(t.getCategoryId());
+                    Category cat = t.getCategoryId() != null ? categoryMap.get(t.getCategoryId()) : null;
                     response.setCategory(cat != null ? cat.getName() : "");
+                    response.setIcon(cat != null ? cat.getIcon() : null);
                     response.setDate(t.getDate());
                     response.setDescription(t.getDescription());
                     response.setUserId(t.getCreatedBy());

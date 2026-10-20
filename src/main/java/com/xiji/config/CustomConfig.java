@@ -35,7 +35,12 @@ public class CustomConfig {
     @Data
     public static class JwtConfig {
         private String signKey;
+        // web端 token 有效期（毫秒），仅供 web 端登录签发
         private Long expire;
+        // access token 有效期（毫秒），默认2小时
+        private Long accessExpire = 7200000L;
+        // refresh token 有效期（毫秒），默认30天
+        private Long refreshExpire = 2592000000L;
     }
     
     @Data

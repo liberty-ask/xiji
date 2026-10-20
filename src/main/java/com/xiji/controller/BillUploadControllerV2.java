@@ -320,19 +320,4 @@ public class BillUploadControllerV2 extends BaseController {
         
         return ResultVo.success(response);
     }
-    
-    /**
-     * 查询任务列表
-     */
-    @GetMapping("/task/list")
-    @Operation(summary = "查询任务列表", description = "查询用户的所有账单处理任务")
-    public ResultVo getTaskList(HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
-        if (userId == null) {
-            return ResultVo.error("用户未登录");
-        }
-        
-        List<BillTask> taskList = billTaskService.getTaskListByUser(userId);
-        return ResultVo.success(taskList);
-    }
 }
