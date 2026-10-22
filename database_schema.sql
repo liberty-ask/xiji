@@ -4,6 +4,7 @@
 -- 说明：使用雪花算法生成ID，所有删除操作均为逻辑删除
 
 -- 删除表（如果存在，用于重新创建）
+DROP TABLE IF EXISTS `sync_records`;
 DROP TABLE IF EXISTS `operation_logs`;
 DROP TABLE IF EXISTS `transactions`;
 DROP TABLE IF EXISTS `category`;
@@ -199,6 +200,24 @@ CREATE TABLE `budget` (
     KEY `idx_family_id` (`family_id`),
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='预算表';
+
+-- ============================================
+-- 9. 端到端加密同步记录表
+-- 服务端密文哑仓库：业务字段全部在 ciphertext 密文内，
+-- 仅同步机制必要字段（id/家庭ID/version/updated_at/deleted/nonce）明文。
+-- 注意：deleted 为墓碑业务字段（非逻辑删除），服务端不做物理删除、墓碑必须可查询。
+-- ============================================
+CREATE TABLE `sync_records` (
+    `id` VARCHAR(36) NOT NULL COMMENT '记录ID（客户端生成UUIDv7）',
+    `family_id` VARCHAR(36) NOT NULL COMMENT '家庭ID（路由与鉴权）',
+    `version` BIGINT NOT NULL COMMENT '版本号（LWW仲裁，高者胜）',
+    `updated_at` DATETIME(3) NOT NULL COMMENT '更新时间（客户端提供，毫秒精度，拉取游标）',
+    `deleted` INT(1) NOT NULL DEFAULT 0 COMMENT '墓碑标识：0-正常，1-已删除',
+    `nonce` BLOB NOT NULL COMMENT 'AES-GCM nonce',
+    `ciphertext` LONGBLOB NOT NULL COMMENT '业务密文（含record_type+业务JSON）',
+    PRIMARY KEY (`id`),
+    KEY `idx_family_updated_id` (`family_id`, `updated_at`, `id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='端到端加密同步记录表';
 
 -- ============================================
 -- 外键约束（可选，根据实际需求决定是否添加）
