@@ -11,8 +11,6 @@ DROP TABLE IF EXISTS `family_application`;
 DROP TABLE IF EXISTS `family_member`;
 DROP TABLE IF EXISTS `family`;
 DROP TABLE IF EXISTS `user`;
-DROP TABLE IF EXISTS `bill_upload`;
-DROP TABLE IF EXISTS `bill_task`;
 
 -- ============================================
 -- 1. 用户表
@@ -201,75 +199,6 @@ CREATE TABLE `budget` (
     KEY `idx_family_id` (`family_id`),
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='预算表';
-
--- ============================================
--- 9. 账单上传记录表
--- ============================================
-CREATE TABLE IF NOT EXISTS `bill_upload` (
-    `id` BIGINT(20) NOT NULL COMMENT 'ID（雪花算法生成）',
-    `user_id` BIGINT(20) NOT NULL COMMENT '用户ID',
-    `family_id` BIGINT(20) NOT NULL COMMENT '家庭ID',
-    `file_id` VARCHAR(100) NOT NULL COMMENT '文件ID（OSS objectKey）',
-    `file_name` VARCHAR(255) NOT NULL COMMENT '文件名',
-    `file_url` VARCHAR(500) COMMENT '文件URL',
-    `file_size` BIGINT(20) COMMENT '文件大小（字节）',
-    `platform` VARCHAR(50) COMMENT '平台名称（支付宝、微信、招商银行等）',
-    `status` INT(1) DEFAULT 0 COMMENT '状态：0-已上传，1-已解析，2-已导入，3-导入失败',
-    `total_count` INT(11) COMMENT '总记录数',
-    `success_count` INT(11) COMMENT '成功数',
-    `error_count` INT(11) COMMENT '错误数',
-    `parse_result` TEXT COMMENT '解析结果（JSON字符串）',
-    `created_by` BIGINT(20) DEFAULT NULL COMMENT '创建人ID',
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_by` BIGINT(20) DEFAULT NULL COMMENT '修改人ID',
-    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` INT(1) DEFAULT 0 COMMENT '逻辑删除标识：0-未删除，1-已删除',
-    PRIMARY KEY (`id`),
-    KEY `idx_user_id` (`user_id`),
-    KEY `idx_family_id` (`family_id`),
-    KEY `idx_file_id` (`file_id`),
-    KEY `idx_status` (`status`),
-    KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='账单上传记录表';
-
--- ============================================
--- 10. 账单任务表
--- ============================================
-CREATE TABLE `bill_task` (
-    `id` BIGINT(20) NOT NULL COMMENT '任务ID（雪花算法生成）',
-    `user_id` BIGINT(20) NOT NULL COMMENT '用户ID',
-    `family_id` BIGINT(20) NOT NULL COMMENT '家庭ID',
-    `bill_upload_id` BIGINT(20) NOT NULL COMMENT '账单上传ID',
-    `original_file_name` VARCHAR(255) NOT NULL COMMENT '原始文件名',
-    `file_size` BIGINT(20) COMMENT '文件大小（字节）',
-    `oss_file_path` VARCHAR(100) NOT NULL COMMENT 'OSS文件路径（objectKey）',
-    `file_url` VARCHAR(500) COMMENT '文件URL',
-    `task_type` INT(1) NOT NULL COMMENT '任务类型：1-上传解析，2-导入',
-    `status` INT(1) DEFAULT 0 COMMENT '任务状态：0-待处理，1-处理中，2-成功，3-失败',
-    `progress` INT(3) DEFAULT 0 COMMENT '处理进度（0-100）',
-    `total_count` INT(11) COMMENT '总记录数',
-    `success_count` INT(11) COMMENT '成功记录数',
-    `fail_count` INT(11) COMMENT '失败记录数',
-    `error_message` TEXT COMMENT '错误信息',
-    `start_time` DATETIME DEFAULT NULL COMMENT '开始处理时间',
-    `end_time` DATETIME DEFAULT NULL COMMENT '结束处理时间',
-    `platform` VARCHAR(50) COMMENT '平台类型（支付宝、微信、京东等）',
-    `created_by` BIGINT(20) DEFAULT NULL COMMENT '创建人ID',
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_by` BIGINT(20) DEFAULT NULL COMMENT '修改人ID',
-    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` INT(1) DEFAULT 0 COMMENT '逻辑删除标识：0-未删除，1-已删除',
-    PRIMARY KEY (`id`),
-    KEY `idx_user_id` (`user_id`),
-    KEY `idx_family_id` (`family_id`),
-    KEY `idx_bill_upload_id` (`bill_upload_id`),
-    KEY `idx_task_type` (`task_type`),
-    KEY `idx_status` (`status`),
-    KEY `idx_progress` (`progress`),
-    KEY `idx_created_at` (`created_at`),
-    KEY `idx_platform` (`platform`),
-    KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='账单任务表';
 
 -- ============================================
 -- 外键约束（可选，根据实际需求决定是否添加）
