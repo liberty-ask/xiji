@@ -42,12 +42,12 @@ public class MobileBudgetController extends BaseController {
     public ResultVo getBudget(@RequestParam(required = false) Integer year,
                               @RequestParam(required = false) Integer month,
                               HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
 
-        Long familyId = getCurrentFamilyId(userId);
+        String familyId = getCurrentFamilyId(userId);
         if (familyId == null) {
             return ResultVo.error("请先选择家庭");
         }
@@ -112,11 +112,11 @@ public class MobileBudgetController extends BaseController {
     @OperationLog(description = "设置预算")
     @PostMapping
     public ResultVo setBudget(@Valid @RequestBody SetBudgetRequest request, HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
-        Long familyId = getCurrentFamilyId(userId);
+        String familyId = getCurrentFamilyId(userId);
         if (familyId == null) {
             return ResultVo.error("请先选择家庭");
         }

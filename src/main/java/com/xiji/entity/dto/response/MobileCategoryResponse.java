@@ -1,7 +1,5 @@
 package com.xiji.entity.dto.response;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 
 /**
@@ -13,8 +11,7 @@ public class MobileCategoryResponse {
     /**
      * 分类ID
      */
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
+    private String id;
     
     /**
      * 分类名称

@@ -68,7 +68,7 @@ class MobileAuthControllerTest {
 
     private User mockUser() {
         User user = new User();
-        user.setId(1L);
+        user.setId("1");
         user.setUsername("13800000000");
         user.setName("测试用户");
         user.setPhone("13800000000");
@@ -81,9 +81,9 @@ class MobileAuthControllerTest {
 
     @Test
     void refresh_validToken_returnsNewTokensAndRotates() throws Exception {
-        when(refreshTokenService.validate("valid-rt")).thenReturn(1L);
-        when(userService.getById(1L)).thenReturn(mockUser());
-        when(refreshTokenService.rotate("valid-rt", 1L)).thenReturn("new-rt");
+        when(refreshTokenService.validate("valid-rt")).thenReturn("1");
+        when(userService.getById("1")).thenReturn(mockUser());
+        when(refreshTokenService.rotate("valid-rt", "1")).thenReturn("new-rt");
 
         mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -93,7 +93,7 @@ class MobileAuthControllerTest {
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.data.refreshToken").value("new-rt"));
 
-        verify(refreshTokenService).rotate("valid-rt", 1L);
+        verify(refreshTokenService).rotate("valid-rt", "1");
     }
 
     @Test
@@ -122,10 +122,10 @@ class MobileAuthControllerTest {
 
     @Test
     void refresh_disabledUser_returns401() throws Exception {
-        when(refreshTokenService.validate("rt")).thenReturn(1L);
+        when(refreshTokenService.validate("rt")).thenReturn("1");
         User disabled = mockUser();
         disabled.setStatus(1);
-        when(userService.getById(1L)).thenReturn(disabled);
+        when(userService.getById("1")).thenReturn(disabled);
 
         mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -140,7 +140,7 @@ class MobileAuthControllerTest {
     void loginPassword_returnsDualTokens() throws Exception {
         when(userService.getOne(any())).thenReturn(mockUser());
         when(loginAttemptUtils.isLoginBlocked(anyString())).thenReturn(false);
-        when(refreshTokenService.generate(1L)).thenReturn("login-rt");
+        when(refreshTokenService.generate("1")).thenReturn("login-rt");
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -151,9 +151,9 @@ class MobileAuthControllerTest {
                 .andExpect(jsonPath("$.data.token").doesNotExist())
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.data.refreshToken").value("login-rt"))
-                .andExpect(jsonPath("$.data.user.id").value(1));
+                .andExpect(jsonPath("$.data.user.id").value("1"));
 
-        verify(refreshTokenService).generate(1L);
+        verify(refreshTokenService).generate("1");
     }
 
     // ========== /auth/logout：全端撤销与幂等 ==========
@@ -161,21 +161,21 @@ class MobileAuthControllerTest {
     @Test
     void logout_revokesAllRefreshTokens() throws Exception {
         mockMvc.perform(post("/api/v1/auth/logout")
-                        .requestAttr("userId", 1L))
+                        .requestAttr("userId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
 
-        verify(refreshTokenService).revokeAll(1L);
+        verify(refreshTokenService).revokeAll("1");
     }
 
     @Test
     void logout_repeat_isIdempotent() throws Exception {
         for (int i = 0; i < 2; i++) {
             mockMvc.perform(post("/api/v1/auth/logout")
-                            .requestAttr("userId", 1L))
+                            .requestAttr("userId", "1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(200));
         }
-        verify(refreshTokenService, times(2)).revokeAll(1L);
+        verify(refreshTokenService, times(2)).revokeAll("1");
     }
 }

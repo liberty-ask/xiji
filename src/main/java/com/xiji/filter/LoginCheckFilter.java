@@ -68,7 +68,7 @@ public class LoginCheckFilter implements Filter {
             //验证JWT令牌
             Claims claims = JwtUtils.parseJwt(token);
             if (claims != null) {
-                Long userId = parseUserId(claims.get("id"));
+                String userId = parseUserId(claims.get("id"));
                 if (userId != null) {
                     // 单次解析结果通过request attribute传递
                     request.setAttribute("userId", userId);
@@ -93,20 +93,14 @@ public class LoginCheckFilter implements Filter {
     }
 
     /**
-     * 将claims中的id转换为Long（JSON数字可能反序列化为Integer）
+     * 将claims中的id转换为String（UUID）
      */
-    private Long parseUserId(Object idObj) {
+    private String parseUserId(Object idObj) {
         if (idObj == null) {
             return null;
         }
-        if (idObj instanceof Number) {
-            return ((Number) idObj).longValue();
-        }
-        try {
-            return Long.parseLong(idObj.toString());
-        } catch (NumberFormatException e) {
-            return null;
-        }
+        String userId = idObj.toString();
+        return userId.isEmpty() ? null : userId;
     }
 
     /**

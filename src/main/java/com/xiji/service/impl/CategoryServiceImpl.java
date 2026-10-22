@@ -23,7 +23,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateSortOrder(List<Long> categoryIds) {
+    public boolean updateSortOrder(List<String> categoryIds) {
         if (categoryIds == null || categoryIds.isEmpty()) {
             return false;
         }
@@ -44,7 +44,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     }
     
     @Override
-    public List<Category> getCategoriesByFamily(Long familyId, Integer type) {
+    public List<Category> getCategoriesByFamily(String familyId, Integer type) {
         LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
         
         // 查询条件：系统默认分类（familyId为null）或指定家庭的自定义分类
@@ -72,7 +72,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     }
     
     @Override
-    public List<Category> getEnabledCategoriesByFamily(Long familyId, Integer type) {
+    public List<Category> getEnabledCategoriesByFamily(String familyId, Integer type) {
         LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
         
         // 查询条件：系统默认分类（familyId为null）或指定家庭的自定义分类

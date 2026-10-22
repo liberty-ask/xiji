@@ -29,9 +29,9 @@ public abstract class BaseController {
      * @param request HttpServletRequest
      * @return 用户ID，如果未登录或token无效返回null
      */
-    protected Long getCurrentUserId(HttpServletRequest request) {
+    protected String getCurrentUserId(HttpServletRequest request) {
         Object userId = request.getAttribute("userId");
-        return userId instanceof Long ? (Long) userId : null;
+        return userId instanceof String ? (String) userId : null;
     }
 
     /**
@@ -40,8 +40,7 @@ public abstract class BaseController {
      * @return 用户ID字符串，如果未登录或token无效返回null
      */
     protected String getCurrentUserIdAsString(HttpServletRequest request) {
-        Long userId = getCurrentUserId(request);
-        return userId != null ? String.valueOf(userId) : null;
+        return getCurrentUserId(request);
     }
 
     /**
@@ -49,7 +48,7 @@ public abstract class BaseController {
      * @param userId 用户ID
      * @return 家庭ID，如果用户没有选择家庭返回null
      */
-    protected Long getCurrentFamilyId(Long userId) {
+    protected String getCurrentFamilyId(String userId) {
         if (userId == null) {
             return null;
         }
@@ -68,7 +67,7 @@ public abstract class BaseController {
      * @param familyId 家庭ID
      * @return 是否是家庭成员
      */
-    protected boolean isFamilyMember(Long userId, Long familyId) {
+    protected boolean isFamilyMember(String userId, String familyId) {
         if (userId == null || familyId == null) {
             return false;
         }

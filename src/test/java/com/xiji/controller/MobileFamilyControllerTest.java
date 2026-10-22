@@ -54,32 +54,32 @@ class MobileFamilyControllerTest {
     @Test
     void changePassword_success_revokesAllRefreshTokens() throws Exception {
         User user = new User();
-        user.setId(1L);
+        user.setId("1");
         user.setUsername("testuser");
         user.setPassword(PasswordUtils.encode("old123"));
-        when(userService.getById(1L)).thenReturn(user);
+        when(userService.getById("1")).thenReturn(user);
         when(userService.updateById(any(User.class))).thenReturn(true);
 
         mockMvc.perform(post("/api/v1/user/change-password")
-                        .requestAttr("userId", 1L)
+                        .requestAttr("userId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"oldPassword\":\"old123\",\"newPassword\":\"new123456\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
 
-        verify(refreshTokenService).revokeAll(1L);
+        verify(refreshTokenService).revokeAll("1");
     }
 
     @Test
     void changePassword_wrongOldPassword_noRevoke() throws Exception {
         User user = new User();
-        user.setId(1L);
+        user.setId("1");
         user.setUsername("testuser");
         user.setPassword(PasswordUtils.encode("old123"));
-        when(userService.getById(1L)).thenReturn(user);
+        when(userService.getById("1")).thenReturn(user);
 
         mockMvc.perform(post("/api/v1/user/change-password")
-                        .requestAttr("userId", 1L)
+                        .requestAttr("userId", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"oldPassword\":\"wrongpwd\",\"newPassword\":\"new123456\"}"))
                 .andExpect(jsonPath("$.code").value(500));

@@ -37,10 +37,10 @@ public class RefreshTokenService {
      * @param userId 用户ID
      * @return refresh token
      */
-    public String generate(Long userId) {
+    public String generate(String userId) {
         String token = generateTokenString();
         // 写入顺序固定：先token key，后索引
-        redisTemplate.opsForValue().set(tokenKey(token), String.valueOf(userId), getRefreshExpire(), TimeUnit.SECONDS);
+        redisTemplate.opsForValue().set(tokenKey(token), userId, getRefreshExpire(), TimeUnit.SECONDS);
         redisTemplate.opsForSet().add(userKey(userId), token);
         redisTemplate.expire(userKey(userId), getRefreshExpire(), TimeUnit.SECONDS);
         return token;
@@ -51,7 +51,7 @@ public class RefreshTokenService {
      * @param token refresh token
      * @return 有效返回对应userId，无效/过期/被撤销返回null
      */
-    public Long validate(String token) {
+    public String validate(String token) {
         if (token == null || token.isEmpty()) {
             return null;
         }
@@ -59,12 +59,7 @@ public class RefreshTokenService {
         if (userId == null) {
             return null;
         }
-        try {
-            return Long.parseLong(userId.toString());
-        } catch (NumberFormatException e) {
-            log.warn("refresh token存储的userId格式异常，value={}", userId);
-            return null;
-        }
+        return userId.toString();
     }
 
     /**
@@ -73,7 +68,7 @@ public class RefreshTokenService {
      * @param userId 用户ID
      * @return 新refresh token
      */
-    public String rotate(String oldToken, Long userId) {
+    public String rotate(String oldToken, String userId) {
         // 删除顺序固定：先token key，后索引
         redisTemplate.delete(tokenKey(oldToken));
         redisTemplate.opsForSet().remove(userKey(userId), oldToken);
@@ -84,7 +79,7 @@ public class RefreshTokenService {
      * 全端撤销：撤销该用户全部refresh token（登出/修改密码）
      * @param userId 用户ID
      */
-    public void revokeAll(Long userId) {
+    public void revokeAll(String userId) {
         String userKey = userKey(userId);
         Set<Object> tokens = redisTemplate.opsForSet().members(userKey);
         if (tokens != null && !tokens.isEmpty()) {
@@ -110,7 +105,7 @@ public class RefreshTokenService {
         return keyPrefix() + "refresh:" + token;
     }
 
-    private String userKey(Long userId) {
+    private String userKey(String userId) {
         return keyPrefix() + "refresh-user:" + userId;
     }
 

@@ -31,7 +31,7 @@ public class FamilyApplicationServiceImpl extends ServiceImpl<FamilyApplicationM
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean applyToJoinFamily(Long familyId, Long userId, String note) {
+    public boolean applyToJoinFamily(String familyId, String userId, String note) {
         // 检查用户是否已经在家庭中
         User user = userService.getById(userId);
         if (user == null) {
@@ -52,6 +52,7 @@ public class FamilyApplicationServiceImpl extends ServiceImpl<FamilyApplicationM
         
         // 创建申请
         FamilyApplication application = new FamilyApplication();
+        application.setId(java.util.UUID.randomUUID().toString());
         application.setFamilyId(familyId);
         application.setUserId(userId);
         application.setStatus(0); // 待审核
@@ -70,7 +71,7 @@ public class FamilyApplicationServiceImpl extends ServiceImpl<FamilyApplicationM
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean processApplication(Long applicationId, Integer status) {
+    public boolean processApplication(String applicationId, Integer status) {
         FamilyApplication application = getById(applicationId);
         if (application == null) {
             throw new RuntimeException("申请不存在");
@@ -103,7 +104,7 @@ public class FamilyApplicationServiceImpl extends ServiceImpl<FamilyApplicationM
     }
     
     @Override
-    public List<FamilyApplication> getPendingApplications(Long familyId) {
+    public List<FamilyApplication> getPendingApplications(String familyId) {
         LambdaQueryWrapper<FamilyApplication> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FamilyApplication::getFamilyId, familyId)
                    .eq(FamilyApplication::getStatus, 0)

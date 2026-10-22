@@ -1,7 +1,5 @@
 package com.xiji.entity.dto.response;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -13,9 +11,8 @@ import java.time.LocalDate;
  */
 @Data
 public class MobileTransactionResponse {
-    
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
+
+    private String id;
     
     /**
      * 交易类型：1(支出) 或 0(收入)
@@ -50,8 +47,7 @@ public class MobileTransactionResponse {
     /**
      * 创建人ID
      */
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long userId;
+    private String userId;
 
     /**
      * 交易对方

@@ -24,7 +24,7 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
         implements FamilyMemberService {
     
     @Override
-    public List<Long> getUserFamilyIds(Long userId) {
+    public List<String> getUserFamilyIds(String userId) {
         LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FamilyMember::getUserId, userId);
         List<FamilyMember> members = list(queryWrapper);
@@ -35,7 +35,7 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean addMemberToFamily(Long familyId, Long userId, Integer role) {
+    public boolean addMemberToFamily(String familyId, String userId, Integer role) {
         // 检查是否已经存在
         LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FamilyMember::getFamilyId, familyId)
@@ -46,6 +46,7 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
         }
         
         FamilyMember member = new FamilyMember();
+        member.setId(java.util.UUID.randomUUID().toString());
         member.setFamilyId(familyId);
         member.setUserId(userId);
         member.setRole(role != null ? role : 0);
@@ -62,7 +63,7 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean removeMemberFromFamily(Long familyId, Long userId) {
+    public boolean removeMemberFromFamily(String familyId, String userId) {
         LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FamilyMember::getFamilyId, familyId)
                    .eq(FamilyMember::getUserId, userId);
@@ -77,7 +78,7 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
     }
     
     @Override
-    public boolean isMemberOfFamily(Long familyId, Long userId) {
+    public boolean isMemberOfFamily(String familyId, String userId) {
         LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FamilyMember::getFamilyId, familyId)
                    .eq(FamilyMember::getUserId, userId);
@@ -85,7 +86,7 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
     }
     
     @Override
-    public Integer getMemberRole(Long familyId, Long userId) {
+    public Integer getMemberRole(String familyId, String userId) {
         LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FamilyMember::getFamilyId, familyId)
                    .eq(FamilyMember::getUserId, userId);

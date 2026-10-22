@@ -49,13 +49,13 @@ public class MobileTransactionController extends BaseController {
     @PostMapping
     @Transactional(rollbackFor = Exception.class)
     public ResultVo addTransaction(@Valid @RequestBody MobileTransactionRequest request, HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
 
         // 获取当前选择的家庭ID
-        Long familyId = getCurrentFamilyId(userId);
+        String familyId = getCurrentFamilyId(userId);
         if (familyId == null) {
             return ResultVo.error("请先选择家庭");
         }
@@ -72,6 +72,7 @@ public class MobileTransactionController extends BaseController {
 
         // 构建交易记录
         Transactions transaction = new Transactions();
+        transaction.setId(java.util.UUID.randomUUID().toString());
         transaction.setFamilyId(familyId);
         transaction.setType(request.getType());
         transaction.setAmount(request.getAmount());
@@ -94,12 +95,12 @@ public class MobileTransactionController extends BaseController {
      */
     @GetMapping
     public ResultVo getTransactions(MobileTransactionListRequest request, HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
 
-        Long familyId = getCurrentFamilyId(userId);
+        String familyId = getCurrentFamilyId(userId);
         if (familyId == null) {
             return ResultVo.error("请先选择家庭");
         }
@@ -143,11 +144,11 @@ public class MobileTransactionController extends BaseController {
         IPage<Transactions> pageResult = transactionsService.page(page, queryWrapper);
 
         // 批量查询分类信息（避免循环点查）
-        Set<Long> categoryIds = pageResult.getRecords().stream()
+        Set<String> categoryIds = pageResult.getRecords().stream()
                 .map(Transactions::getCategoryId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        Map<Long, Category> categoryMap = categoryIds.isEmpty() ? Map.of()
+        Map<String, Category> categoryMap = categoryIds.isEmpty() ? Map.of()
                 : categoryService.listByIds(categoryIds).stream()
                     .collect(Collectors.toMap(Category::getId, c -> c));
 
@@ -184,16 +185,16 @@ public class MobileTransactionController extends BaseController {
     @OperationLog(description = "修改交易")
     @PutMapping("/{id}")
     @Transactional(rollbackFor = Exception.class)
-    public ResultVo updateTransaction(@PathVariable Long id, 
+    public ResultVo updateTransaction(@PathVariable String id,
                                      @Valid @RequestBody MobileTransactionUpdateRequest request, 
                                      HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
 
         // 获取当前选择的家庭ID
-        Long familyId = getCurrentFamilyId(userId);
+        String familyId = getCurrentFamilyId(userId);
         if (familyId == null) {
             return ResultVo.error("请先选择家庭");
         }
@@ -248,8 +249,8 @@ public class MobileTransactionController extends BaseController {
     @OperationLog(description = "删除交易")
     @DeleteMapping("/{id}")
     @Transactional(rollbackFor = Exception.class)
-    public ResultVo deleteTransaction(@PathVariable Long id, HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
+    public ResultVo deleteTransaction(@PathVariable String id, HttpServletRequest httpRequest) {
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }

@@ -15,7 +15,7 @@ public interface CategoryService extends IService<Category> {
      * @param categoryIds 类别ID列表（按排序顺序）
      * @return 是否成功
      */
-    boolean updateSortOrder(List<Long> categoryIds);
+    boolean updateSortOrder(List<String> categoryIds);
     
     /**
      * 获取指定家庭的分类列表（系统默认分类 + 家庭自定义分类）
@@ -23,7 +23,7 @@ public interface CategoryService extends IService<Category> {
      * @param type 类别类型（0-收入，1-支出，null表示查询所有类型）
      * @return 分类列表
      */
-    List<Category> getCategoriesByFamily(Long familyId, Integer type);
+    List<Category> getCategoriesByFamily(String familyId, Integer type);
     
     /**
      * 获取指定家庭启用的分类列表（系统默认分类 + 家庭自定义分类）
@@ -31,6 +31,6 @@ public interface CategoryService extends IService<Category> {
      * @param type 类别类型（0-收入，1-支出，null表示查询所有类型）
      * @return 分类列表
      */
-    List<Category> getEnabledCategoriesByFamily(Long familyId, Integer type);
+    List<Category> getEnabledCategoriesByFamily(String familyId, Integer type);
 }
 

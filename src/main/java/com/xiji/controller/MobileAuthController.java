@@ -231,7 +231,7 @@ public class MobileAuthController {
                     .body(ResultVo.error(401, "缺少刷新凭证，请重新登录"));
         }
 
-        Long userId = refreshTokenService.validate(refreshToken);
+        String userId = refreshTokenService.validate(refreshToken);
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ResultVo.error(401, "登录已过期，请重新登录"));
@@ -261,7 +261,7 @@ public class MobileAuthController {
      */
     @PostMapping("/logout")
     public ResultVo logout(HttpServletRequest request) {
-        Long userId = (Long) request.getAttribute("userId");
+        String userId = (String) request.getAttribute("userId");
         if (userId != null) {
             refreshTokenService.revokeAll(userId);
             log.info("用户登出，已全端撤销refresh token，userId={}", userId);
@@ -329,13 +329,14 @@ public class MobileAuthController {
             user.setPhone(request.getPhone());
             user.setPassword(PasswordUtils.encode(request.getPassword()));
             user.setStatus(0); // 默认正常状态
+            user.setId(java.util.UUID.randomUUID().toString());
             // 创建时间和更新时间由MyBatis-Plus自动填充
             if (!userService.save(user)) {
                 return ResultVo.error("注册失败");
             }
             
             // 注册成功后，自动创建家庭
-            Long familyId = null;
+            String familyId = null;
             int role = 0; // 默认普通成员
             
             String familyName = request.getNickname() + "的家庭";

@@ -98,7 +98,7 @@ class RefreshTokenServiceTest {
 
     @Test
     void generate_storesTokenWith30dTtl_andIndex() {
-        String token = service.generate(1L);
+        String token = service.generate("1");
 
         assertNotNull(token);
         assertFalse(token.isEmpty());
@@ -111,8 +111,8 @@ class RefreshTokenServiceTest {
 
     @Test
     void validate_validToken_returnsUserId() {
-        String token = service.generate(42L);
-        assertEquals(42L, service.validate(token));
+        String token = service.generate("42");
+        assertEquals("42", service.validate(token));
     }
 
     @Test
@@ -128,42 +128,42 @@ class RefreshTokenServiceTest {
 
     @Test
     void rotate_oldTokenInvalid_newTokenValid() {
-        String oldToken = service.generate(1L);
-        String newToken = service.rotate(oldToken, 1L);
+        String oldToken = service.generate("1");
+        String newToken = service.rotate(oldToken, "1");
 
         assertNotEquals(oldToken, newToken);
         // 旧token已删除（key不存在即失效）
         assertNull(service.validate(oldToken));
         // 新token有效
-        assertEquals(1L, service.validate(newToken));
+        assertEquals("1", service.validate(newToken));
         // 旧token已从索引移除
         assertFalse(setStore.get("family:refresh-user:1").contains(oldToken));
     }
 
     @Test
     void revokeAll_allTokensInvalidated() {
-        String token1 = service.generate(1L);
-        String token2 = service.generate(1L);
-        String otherUserToken = service.generate(2L);
+        String token1 = service.generate("1");
+        String token2 = service.generate("1");
+        String otherUserToken = service.generate("2");
 
-        service.revokeAll(1L);
+        service.revokeAll("1");
 
         assertNull(service.validate(token1));
         assertNull(service.validate(token2));
         // 其他用户不受影响
-        assertEquals(2L, service.validate(otherUserToken));
+        assertEquals("2", service.validate(otherUserToken));
         // 索引key已删除
         assertFalse(setStore.containsKey("family:refresh-user:1"));
     }
 
     @Test
     void revokeAll_noTokens_isIdempotent() {
-        assertDoesNotThrow(() -> service.revokeAll(99L));
+        assertDoesNotThrow(() -> service.revokeAll("99"));
     }
 
     @Test
     void expiredToken_autoCleaned_validateReturnsNull() {
-        String token = service.generate(1L);
+        String token = service.generate("1");
         // 模拟TTL到期后key被Redis自动清理
         valueStore.remove("family:refresh:" + token);
         assertNull(service.validate(token));
@@ -171,8 +171,8 @@ class RefreshTokenServiceTest {
 
     @Test
     void tokenFormat_isOpaqueRandomString() {
-        String token1 = service.generate(1L);
-        String token2 = service.generate(1L);
+        String token1 = service.generate("1");
+        String token2 = service.generate("1");
         // 不透明随机串：非JWT（不含点分隔符），每次生成不同
         assertFalse(token1.contains("."));
         assertNotEquals(token1, token2);

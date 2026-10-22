@@ -59,13 +59,13 @@ public class MobileFamilyController extends BaseController {
      */
     @GetMapping("/families/list")
     public ResultVo getUserFamilies(HttpServletRequest request) {
-        Long userId = getCurrentUserId(request);
+        String userId = getCurrentUserId(request);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
 
         // 获取用户的所有家庭ID
-        List<Long> familyIds = familyMemberService.getUserFamilyIds(userId);
+        List<String> familyIds = familyMemberService.getUserFamilyIds(userId);
         if (familyIds.isEmpty()) {
             return ResultVo.success(new ArrayList<>());
         }
@@ -74,12 +74,12 @@ public class MobileFamilyController extends BaseController {
         List<Family> families = familyService.listByIds(familyIds);
         
         // 获取当前选择的家庭ID
-        Long currentFamilyId = getCurrentFamilyId(userId);
+        String currentFamilyId = getCurrentFamilyId(userId);
 
         // 转换为响应DTO
         List<MobileFamilyResponse> responseList = families.stream().map(family -> {
             MobileFamilyResponse response = new MobileFamilyResponse();
-            response.setId(String.valueOf(family.getId()));
+            response.setId(family.getId());
             response.setName(family.getName());
             response.setIsCurrent(family.getId().equals(currentFamilyId));
             
@@ -100,7 +100,7 @@ public class MobileFamilyController extends BaseController {
     @OperationLog(description = "切换家庭")
     @PostMapping("/families/switch")
     public ResultVo switchFamily(@RequestBody SwitchFamilyRequest request, HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
@@ -109,7 +109,7 @@ public class MobileFamilyController extends BaseController {
             return ResultVo.error("家庭ID不能为空");
         }
 
-        Long familyId = request.getFamilyId();
+        String familyId = request.getFamilyId();
 
         // 检查用户是否属于该家庭
         if (!familyMemberService.isMemberOfFamily(familyId, userId)) {
@@ -138,7 +138,7 @@ public class MobileFamilyController extends BaseController {
      */
     @GetMapping("/families/members")
     public ResultVo getFamilyMembers(HttpServletRequest request) {
-        Long userId = getCurrentUserId(request);
+        String userId = getCurrentUserId(request);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
@@ -159,23 +159,23 @@ public class MobileFamilyController extends BaseController {
                 .eq(FamilyMember::getFamilyId, currentUser.getCurrentFamilyId()));
 
         // 获取成员的用户信息
-        List<Long> memberUserIds = members.stream()
+        List<String> memberUserIds = members.stream()
             .map(FamilyMember::getUserId)
             .collect(Collectors.toList());
-        
+
         if (memberUserIds.isEmpty()) {
             return ResultVo.success(new ArrayList<>());
         }
 
         List<User> users = userService.listByIds(memberUserIds);
-        Map<Long, FamilyMember> memberMap = members.stream()
+        Map<String, FamilyMember> memberMap = members.stream()
             .collect(Collectors.toMap(FamilyMember::getUserId, m -> m));
 
         List<MobileFamilyMemberResponse> responseList = users.stream()
             .filter(user -> user.getStatus() == null || user.getStatus() == 0) // 只查询正常状态的用户
             .map(user -> {
                 MobileFamilyMemberResponse member = new MobileFamilyMemberResponse();
-                member.setId(String.valueOf(user.getId()));
+                member.setId(user.getId());
                 member.setName(user.getName() != null ? user.getName() : user.getUsername());
                 
                 // 从family_member表获取角色
@@ -203,7 +203,7 @@ public class MobileFamilyController extends BaseController {
     @GetMapping("/families/pending-applications")
     @CheckPermission
     public ResultVo getPendingApplications(HttpServletRequest request) {
-        Long userId = getCurrentUserId(request);
+        String userId = getCurrentUserId(request);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
@@ -260,7 +260,7 @@ public class MobileFamilyController extends BaseController {
     @PostMapping("/families/process-application")
     @CheckPermission
     public ResultVo processApplication(@RequestBody ProcessApplicationRequest request, HttpServletRequest httpRequest) {
-        Long id = request.getId();
+        String id = request.getId();
         String action = request.getAction();
         
         if (ObjectUtil.isEmpty(id)) {
@@ -274,7 +274,7 @@ public class MobileFamilyController extends BaseController {
         }
 
         // 检查权限：只有家庭管理员可以处理申请
-        Long userId = getCurrentUserId(httpRequest);
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
@@ -312,7 +312,7 @@ public class MobileFamilyController extends BaseController {
      */
     @GetMapping("/user/profile")
     public ResultVo getProfile(HttpServletRequest request) {
-        Long userId = getCurrentUserId(request);
+        String userId = getCurrentUserId(request);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
@@ -361,7 +361,7 @@ public class MobileFamilyController extends BaseController {
     @OperationLog(description = "修改密码")
     @PostMapping("/user/change-password")
     public ResultVo changePassword(@Valid @RequestBody ChangePasswordRequest request, HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
@@ -406,7 +406,7 @@ public class MobileFamilyController extends BaseController {
     @OperationLog(description = "退出家庭")
     @PostMapping("/families/exit")
     public ResultVo exitFamily(HttpServletRequest request) {
-        Long userId = getCurrentUserId(request);
+        String userId = getCurrentUserId(request);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
@@ -420,7 +420,7 @@ public class MobileFamilyController extends BaseController {
             return ResultVo.error("您还没有选择家庭");
         }
         
-        Long familyId = user.getCurrentFamilyId();
+        String familyId = user.getCurrentFamilyId();
         
         // 检查是否为家庭管理员（管理员不能退出，需要先转移管理权）
         Integer role = familyMemberService.getMemberRole(familyId, userId);
@@ -435,7 +435,7 @@ public class MobileFamilyController extends BaseController {
             // 如果退出的是当前选择的家庭，清空当前家庭ID
             if (user.getCurrentFamilyId().equals(familyId)) {
                 // 切换到其他家庭（如果有）
-                List<Long> otherFamilyIds = familyMemberService.getUserFamilyIds(userId);
+                List<String> otherFamilyIds = familyMemberService.getUserFamilyIds(userId);
                 if (!otherFamilyIds.isEmpty()) {
                     user.setCurrentFamilyId(otherFamilyIds.get(0));
                 } else {
@@ -457,7 +457,7 @@ public class MobileFamilyController extends BaseController {
     @OperationLog(description = "申请加入家庭")
     @PostMapping("/families/apply")
     public ResultVo applyToJoinFamily(@Valid @RequestBody ApplyToJoinFamilyRequest request, HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
@@ -466,7 +466,7 @@ public class MobileFamilyController extends BaseController {
             return ResultVo.error("家庭ID不能为空");
         }
         
-        Long familyId = request.getFamilyId();
+        String familyId = request.getFamilyId();
         String note = request.getNote();
         
         // 检查家庭是否存在
@@ -505,7 +505,7 @@ public class MobileFamilyController extends BaseController {
     @OperationLog(description = "更新资料")
     @PostMapping("/user/profile")
     public ResultVo updateProfile(@Valid @RequestBody UpdateProfileRequest request, HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }

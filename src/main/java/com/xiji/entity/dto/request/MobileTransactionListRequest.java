@@ -24,7 +24,7 @@ public class MobileTransactionListRequest {
     /**
      * 用户ID
      */
-    private Long userId;
+    private String userId;
 
     /**
      * 交易类型：1-支出，0-收入

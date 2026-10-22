@@ -15,7 +15,7 @@ public interface FamilyMemberService extends IService<FamilyMember> {
      * @param userId 用户ID
      * @return 家庭ID列表
      */
-    List<Long> getUserFamilyIds(Long userId);
+    List<String> getUserFamilyIds(String userId);
     
     /**
      * 将用户加入家庭
@@ -24,7 +24,7 @@ public interface FamilyMemberService extends IService<FamilyMember> {
      * @param role 角色：1-管理员，0-普通成员
      * @return 是否成功
      */
-    boolean addMemberToFamily(Long familyId, Long userId, Integer role);
+    boolean addMemberToFamily(String familyId, String userId, Integer role);
     
     /**
      * 从家庭中移除用户
@@ -32,7 +32,7 @@ public interface FamilyMemberService extends IService<FamilyMember> {
      * @param userId 用户ID
      * @return 是否成功
      */
-    boolean removeMemberFromFamily(Long familyId, Long userId);
+    boolean removeMemberFromFamily(String familyId, String userId);
     
     /**
      * 检查用户是否属于某个家庭
@@ -40,7 +40,7 @@ public interface FamilyMemberService extends IService<FamilyMember> {
      * @param userId 用户ID
      * @return 是否属于
      */
-    boolean isMemberOfFamily(Long familyId, Long userId);
+    boolean isMemberOfFamily(String familyId, String userId);
     
     /**
      * 获取用户在家庭中的角色
@@ -48,6 +48,6 @@ public interface FamilyMemberService extends IService<FamilyMember> {
      * @param userId 用户ID
      * @return 角色：1-管理员，0-普通成员，null-不属于该家庭
      */
-    Integer getMemberRole(Long familyId, Long userId);
+    Integer getMemberRole(String familyId, String userId);
 }
 

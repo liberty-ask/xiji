@@ -3,8 +3,6 @@ package com.xiji.entity.domain;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -20,21 +18,18 @@ public class FamilyApplication extends BaseEntity {
     /**
      * 申请ID
      */
-    @TableId(type = IdType.ASSIGN_ID)
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
-    
+    @TableId(type = IdType.INPUT)
+    private String id;
+
     /**
      * 家庭ID
      */
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long familyId;
-    
+    private String familyId;
+
     /**
      * 申请人ID
      */
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long userId;
+    private String userId;
     
     /**
      * 状态：0-待审核，1-已批准，2-已拒绝

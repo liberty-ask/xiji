@@ -3,8 +3,6 @@ package com.xiji.entity.domain;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -22,15 +20,13 @@ public class Budget extends BaseEntity {
     /**
      * 预算ID
      */
-    @TableId(type = IdType.ASSIGN_ID)
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
-    
+    @TableId(type = IdType.INPUT)
+    private String id;
+
     /**
      * 家庭ID
      */
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long familyId;
+    private String familyId;
     
     /**
      * 预算金额

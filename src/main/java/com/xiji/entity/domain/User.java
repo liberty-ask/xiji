@@ -4,8 +4,6 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,9 +19,8 @@ import lombok.EqualsAndHashCode;
 @Schema(description = "用户实体")
 public class User extends BaseEntity {
 
-    @TableId(type = IdType.ASSIGN_ID)
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
+    @TableId(type = IdType.INPUT)
+    private String id;
 
     private String username;
 
@@ -45,7 +42,6 @@ public class User extends BaseEntity {
     /**
      * 当前选择的家庭ID
      */
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long currentFamilyId;
+    private String currentFamilyId;
 }
 

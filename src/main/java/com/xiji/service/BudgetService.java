@@ -17,14 +17,14 @@ public interface BudgetService extends IService<Budget> {
      * @param amount 预算金额
      * @return 是否成功
      */
-    boolean setBudget(Long familyId, BigDecimal amount);
+    boolean setBudget(String familyId, BigDecimal amount);
     
     /**
      * 获取预算
      * @param familyId 家庭ID
      * @return 预算对象，如果不存在返回null
      */
-    Budget getBudget(Long familyId);
+    Budget getBudget(String familyId);
 }
 
 

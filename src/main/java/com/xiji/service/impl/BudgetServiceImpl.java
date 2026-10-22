@@ -23,10 +23,11 @@ public class BudgetServiceImpl extends ServiceImpl<BudgetMapper, Budget> impleme
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean setBudget(Long familyId, BigDecimal amount) {
+    public boolean setBudget(String familyId, BigDecimal amount) {
         Budget budget = getBudget(familyId);
         if (budget == null) {
             budget = new Budget();
+            budget.setId(java.util.UUID.randomUUID().toString());
             budget.setFamilyId(familyId);
         }
         budget.setAmount(amount);
@@ -34,7 +35,7 @@ public class BudgetServiceImpl extends ServiceImpl<BudgetMapper, Budget> impleme
     }
     
     @Override
-    public Budget getBudget(Long familyId) {
+    public Budget getBudget(String familyId) {
         LambdaQueryWrapper<Budget> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Budget::getFamilyId, familyId);
         return getOne(queryWrapper);

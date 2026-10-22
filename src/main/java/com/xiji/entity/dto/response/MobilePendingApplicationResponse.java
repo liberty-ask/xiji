@@ -1,7 +1,5 @@
 package com.xiji.entity.dto.response;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 
 /**
@@ -12,8 +10,7 @@ public class MobilePendingApplicationResponse {
     /**
      * 申请ID
      */
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
+    private String id;
     
     /**
      * 申请人姓名

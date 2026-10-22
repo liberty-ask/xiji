@@ -39,13 +39,13 @@ public class MobileCategoryController extends BaseController {
     public ResultVo getCategories(@RequestParam(required = false) Integer type,
                                   HttpServletRequest request) {
         // 获取当前用户ID
-        Long userId = getCurrentUserId(request);
+        String userId = getCurrentUserId(request);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
 
         // 获取当前选择的家庭ID
-        Long familyId = getCurrentFamilyId(userId);
+        String familyId = getCurrentFamilyId(userId);
         
         // 获取分类列表（系统默认分类 + 家庭自定义分类）
         List<Category> categories = categoryService.getEnabledCategoriesByFamily(familyId, type);
@@ -71,12 +71,12 @@ public class MobileCategoryController extends BaseController {
     @CheckPermission
     @OperationLog(description = "添加家庭自定义分类")
     public ResultVo addCategory(@Valid @RequestBody AddCategoryRequest request, HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
 
-        Long familyId = getCurrentFamilyId(userId);
+        String familyId = getCurrentFamilyId(userId);
         if (familyId == null) {
             return ResultVo.error("请先选择家庭");
         }
@@ -96,6 +96,7 @@ public class MobileCategoryController extends BaseController {
 
         // 创建分类
         Category category = new Category();
+        category.setId(java.util.UUID.randomUUID().toString());
         category.setFamilyId(familyId);
         category.setName(request.getName().trim());
         category.setIcon(request.getIcon());
@@ -149,15 +150,15 @@ public class MobileCategoryController extends BaseController {
     @PutMapping("/{id}")
     @CheckPermission
     @OperationLog(description = "更新分类")
-    public ResultVo updateCategory(@PathVariable Long id, 
+    public ResultVo updateCategory(@PathVariable String id,
                                    @Valid @RequestBody UpdateCategoryRequest request,
                                    HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
 
-        Long familyId = getCurrentFamilyId(userId);
+        String familyId = getCurrentFamilyId(userId);
         if (familyId == null) {
             return ResultVo.error("请先选择家庭");
         }
@@ -225,13 +226,13 @@ public class MobileCategoryController extends BaseController {
     @DeleteMapping("/{id}")
     @CheckPermission
     @OperationLog(description = "删除分类")
-    public ResultVo deleteCategory(@PathVariable Long id, HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
+    public ResultVo deleteCategory(@PathVariable String id, HttpServletRequest httpRequest) {
+        String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
 
-        Long familyId = getCurrentFamilyId(userId);
+        String familyId = getCurrentFamilyId(userId);
         if (familyId == null) {
             return ResultVo.error("请先选择家庭");
         }

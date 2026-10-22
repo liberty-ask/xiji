@@ -1,19 +1,17 @@
 package com.xiji.entity.dto.response;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 
 /**
  * 手机端用户信息响应DTO
+ * @author liberty
  */
 @Data
 public class MobileUserResponse {
     /**
      * 用户ID
      */
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
+    private String id;
     
     /**
      * 昵称

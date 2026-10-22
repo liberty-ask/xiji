@@ -4,8 +4,6 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -21,9 +19,8 @@ public class Category extends BaseEntity {
     /**
      * 类别ID
      */
-    @TableId(type = IdType.ASSIGN_ID)
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
+    @TableId(type = IdType.INPUT)
+    private String id;
     
     /**
      * 类别名称
@@ -48,8 +45,7 @@ public class Category extends BaseEntity {
     /**
      * 家庭ID（null表示系统默认分类，有值表示该家庭的自定义分类）
      */
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long familyId;
+    private String familyId;
     
     /**
      * 类别类型：0-收入，1-支出

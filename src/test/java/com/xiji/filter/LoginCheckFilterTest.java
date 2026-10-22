@@ -49,7 +49,7 @@ class LoginCheckFilterTest {
 
     private String generateToken(long expireMs) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("id", 1L);
+        claims.put("id", "1");
         claims.put("username", "testuser");
         return JwtUtils.generateJwt(claims, expireMs);
     }
@@ -82,7 +82,7 @@ class LoginCheckFilterTest {
 
         assertEquals(200, response.getStatus());
         assertNotNull(chain.getRequest());
-        assertEquals(1L, chain.getRequest().getAttribute("userId"));
+        assertEquals("1", chain.getRequest().getAttribute("userId"));
         assertEquals("testuser", chain.getRequest().getAttribute("username"));
     }
 
@@ -94,7 +94,7 @@ class LoginCheckFilterTest {
 
         assertEquals(200, response.getStatus());
         assertNotNull(chain.getRequest());
-        assertEquals(1L, chain.getRequest().getAttribute("userId"));
+        assertEquals("1", chain.getRequest().getAttribute("userId"));
     }
 
     @Test

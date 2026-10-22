@@ -30,7 +30,7 @@ class JwtUtilsTest {
 
     private Map<String, Object> claims() {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("id", 1L);
+        claims.put("id", "1");
         claims.put("username", "testuser");
         return claims;
     }
@@ -42,7 +42,7 @@ class JwtUtilsTest {
 
         Claims parsed = JwtUtils.parseJwt(jwt);
         assertNotNull(parsed);
-        assertEquals(1L, ((Number) parsed.get("id")).longValue());
+        assertEquals("1", parsed.get("id"));
         assertEquals("testuser", parsed.get("username"));
     }
 

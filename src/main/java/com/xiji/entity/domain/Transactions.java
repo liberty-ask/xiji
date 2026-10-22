@@ -7,8 +7,6 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -20,22 +18,19 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class Transactions extends BaseEntity {
-    @TableId(value = "id", type = IdType.ASSIGN_ID)
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
-    
+    @TableId(value = "id", type = IdType.INPUT)
+    private String id;
+
     /**
      * 家庭ID
      */
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long familyId;
+    private String familyId;
     // 0：收入，1：支出
     private Integer type;
     // 金额
     private BigDecimal amount;
     // 类别ID（关联category表）
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long categoryId;
+    private String categoryId;
     // 支付方式
     private String payMethod;
     private LocalDate date;

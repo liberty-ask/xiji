@@ -3,8 +3,6 @@ package com.xiji.entity.domain;
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -20,8 +18,7 @@ public class BaseEntity implements Serializable {
     /**
      * 创建人ID
      */
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long createdBy;
+    private String createdBy;
 
     /**
      * 创建时间（自动填充）
@@ -32,8 +29,7 @@ public class BaseEntity implements Serializable {
     /**
      * 修改人ID
      */
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long updatedBy;
+    private String updatedBy;
 
     /**
      * 修改时间（自动填充）
