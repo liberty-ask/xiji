@@ -43,7 +43,6 @@ flowchart LR
   Api --> MySQL[(MySQL)]
   Api --> Redis[(Redis)]
   Api --> OSS[阿里云OSS]
-  Api --> Zhipu[智谱AI]
 ```
 
 分层：Controller → Service → Mapper（MyBatis-Plus）→ Entity / DTO。JWT 鉴权，AOP 处理日志等横切逻辑。
@@ -101,13 +100,12 @@ CREATE DATABASE family_financial DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_u
 | `REDIS_HOST` `REDIS_PORT` `REDIS_PASSWORD` `REDIS_DATABASE` | Redis |
 | `JWT_SIGN_KEY` | JWT 签名密钥，建议不少于 32 字符 |
 | `ALIYUN_OSS_ENDPOINT` `ALIYUN_OSS_ACCESS_KEY_ID` `ALIYUN_OSS_ACCESS_KEY_SECRET` `ALIYUN_OSS_BUCKET_NAME` `ALIYUN_OSS_CUSTOM_DOMAIN` `ALIYUN_OSS_FOLDER` | 对象存储 |
-| `ZHIPU_AI_API_KEY` `ZHIPU_AI_MODEL` | 智谱（语音解析、导入分类） |
 | `CORS_ALLOWED_ORIGINS` | 允许的前端来源 |
 | `SMS_ENABLE` `ALIYUN_SMS_ACCESS_KEY_ID` `ALIYUN_SMS_ACCESS_KEY_SECRET` `ALIYUN_SMS_SIGN_NAME` `ALIYUN_SMS_TEMPLATE_CODE` | 短信（仅 active profile） |
 
 测试 profile 中短信默认关闭（`custom.sms.enable: false`），验证码会返回给客户端，便于本地调试。
 
-OSS 与智谱密钥按你实际账号填写。未配置时，头像上传和 AI 解析相关接口会失败，记账主流程仍可联调。
+OSS 密钥按你实际账号填写。未配置时，头像上传相关接口会失败，记账主流程仍可联调。
 
 ### 3. 启动
 

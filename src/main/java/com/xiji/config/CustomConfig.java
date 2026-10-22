@@ -25,10 +25,7 @@ public class CustomConfig {
     
     // OSS配置
     private OssConfig oss = new OssConfig();
-    
-    // 智谱AI配置
-    private ZhipuAiConfig zhipuAi = new ZhipuAiConfig();
-    
+
     // CORS配置
     private CorsConfig cors = new CorsConfig();
     
@@ -83,14 +80,6 @@ public class CustomConfig {
         private String customDomain;
         // 文件上传目录，用于区分环境（如：prod/uploads/ 或 test/uploads/）
         private String folder;
-    }
-    
-    @Data
-    public static class ZhipuAiConfig {
-        // 智谱AI API Key
-        private String apiKey;
-        // 模型名称（默认使用glm-4-flash）
-        private String model = "glm-4-flash";
     }
     
     @Data
