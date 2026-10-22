@@ -11,22 +11,17 @@ import com.xiji.entity.domain.Transactions;
 import com.xiji.entity.dto.request.MobileTransactionRequest;
 import com.xiji.entity.dto.request.MobileTransactionUpdateRequest;
 import com.xiji.entity.dto.request.MobileTransactionListRequest;
-import com.xiji.entity.dto.request.VoiceTransactionRequest;
 import com.xiji.entity.dto.response.MobileTransactionListResponse;
 import com.xiji.entity.dto.response.MobileTransactionResponse;
-import com.xiji.entity.dto.response.VoiceTransactionResponse;
 import com.xiji.service.CategoryService;
 import com.xiji.service.TransactionsService;
-import com.xiji.service.VoiceTransactionAiService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +41,6 @@ public class MobileTransactionController extends BaseController {
 
     private final TransactionsService transactionsService;
     private final CategoryService categoryService;
-    private final VoiceTransactionAiService voiceTransactionAiService;
 
     /**
      * 添加交易记录
@@ -276,108 +270,6 @@ public class MobileTransactionController extends BaseController {
             return ResultVo.success("删除成功");
         } else {
             return ResultVo.error("删除失败");
-        }
-    }
-
-    /**
-     * 语音快捷记账
-     * 接收语音转文字后的文本，使用智谱AI解析并创建交易记录
-     */
-    @OperationLog(description = "语音记账")
-    @PostMapping("/voice")
-    @Transactional(rollbackFor = Exception.class)
-    public ResultVo voiceTransaction(@Valid @RequestBody VoiceTransactionRequest request, HttpServletRequest httpRequest) {
-        Long userId = getCurrentUserId(httpRequest);
-        if (userId == null) {
-            return ResultVo.error("用户未登录");
-        }
-
-        // 获取当前选择的家庭ID
-        Long familyId = getCurrentFamilyId(userId);
-        if (familyId == null) {
-            return ResultVo.error("请先选择家庭");
-        }
-
-        try {
-            // 获取系统可用的分类列表（包含收入和支出分类，供AI选择）
-            List<Category> allCategories = categoryService.getEnabledCategoriesByFamily(familyId, null);
-            List<String> categoryNames = allCategories.stream()
-                    .map(Category::getName)
-                    .collect(Collectors.toList());
-            
-            if (categoryNames.isEmpty()) {
-                return ResultVo.error("系统中没有可用的分类，请先创建分类");
-            }
-
-            // 使用智谱AI解析文本
-            VoiceTransactionResponse parsedData = voiceTransactionAiService.parseVoiceText(
-                    request.getText(), categoryNames);
-            
-            if (parsedData == null) {
-                return ResultVo.error("无法解析文本内容，请重新输入");
-            }
-
-            // 验证AI返回的数据
-            if (parsedData.getAmount() == null || parsedData.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-                return ResultVo.error("解析失败：金额无效");
-            }
-            
-            if (StringUtils.isBlank(parsedData.getCategory())) {
-                return ResultVo.error("解析失败：未识别到分类");
-            }
-
-            // 查询匹配的分类（系统默认分类 + 家庭自定义分类）
-            List<Category> categories = categoryService.getEnabledCategoriesByFamily(familyId, parsedData.getType());
-            Category category = categories.stream()
-                    .filter(c -> parsedData.getCategory().equals(c.getName()))
-                    .findFirst()
-                    .orElse(null);
-            
-            // 如果找不到精确匹配的分类，尝试模糊匹配或使用默认分类
-            if (category == null && !categories.isEmpty()) {
-                // 尝试模糊匹配（包含关系）
-                category = categories.stream()
-                        .filter(c -> parsedData.getCategory().contains(c.getName()) || 
-                                   c.getName().contains(parsedData.getCategory()))
-                        .findFirst()
-                        .orElse(null);
-                
-                // 如果还是找不到，使用第一个可用分类作为默认值
-                if (category == null) {
-                    category = categories.get(0);
-                    parsedData.setCategory(category.getName());
-                }
-            }
-            
-            if (category == null) {
-                return ResultVo.error("未找到匹配的分类：" + parsedData.getCategory());
-            }
-
-            // 如果AI没有返回日期，使用今天
-            if (parsedData.getDate() == null) {
-                parsedData.setDate(LocalDate.now());
-            }
-
-            // 构建交易记录
-            Transactions transaction = new Transactions();
-            transaction.setFamilyId(familyId);
-            transaction.setType(parsedData.getType());
-            transaction.setAmount(parsedData.getAmount());
-            transaction.setCategoryId(category.getId());
-            transaction.setDate(parsedData.getDate());
-            transaction.setDescription(parsedData.getNote());
-            transaction.setCreatedBy(userId);
-
-            if (transactionsService.save(transaction)) {
-                log.info("语音记账成功，userId={}，familyId={}，transactionId={}", userId, familyId, transaction.getId());
-                return ResultVo.success("记账成功");
-            } else {
-                log.error("语音记账保存失败，userId={}，familyId={}", userId, familyId);
-                return ResultVo.error("记账失败");
-            }
-        } catch (Exception e) {
-            log.error("语音记账失败，userId={}", userId, e);
-            return ResultVo.error("记账失败");
         }
     }
 
