@@ -21,6 +21,11 @@ GitHub 为源仓库；Gitee 为同步镜像，内容以 GitHub 为准。
 | 后端（本仓库） | [liberty-ask/xiji](https://github.com/liberty-ask/xiji) | [liberty-warehouse/xiji](https://gitee.com/liberty-warehouse/xiji) |
 | 前端 Flutter | [liberty-ask/xiji_flutter](https://github.com/liberty-ask/xiji_flutter) | [liberty-warehouse/xiji_flutter](https://gitee.com/liberty-warehouse/xiji_flutter) |
 
+## 与客户端版本的配对
+
+- **云端版客户端**（`online-final`）：配对本文档的部署方式，使用本仓库全部 API（统计、账单导入、语音记账等）
+- **离线版客户端**（master 分支，开发中）：仅使用鉴权与家庭管理 API，统计、账单导入、语音记账均在客户端本地完成，数据仅存设备
+
 ## API 能力
 
 - **认证**：手机号注册 / 登录 / 忘记密码；测试环境可不发短信，验证码直接返回前端
