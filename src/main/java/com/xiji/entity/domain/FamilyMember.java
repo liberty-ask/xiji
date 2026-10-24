@@ -35,5 +35,11 @@ public class FamilyMember extends BaseEntity {
      * 角色：1-管理员，0-普通成员
      */
     private Integer role;
+
+    /**
+     * 同步开关投影：1-开启云备份同步，0-休眠（机制状态明文，仅展示用途，
+     * 账号级真值在客户端 vault.enabled，由客户端开关切换时上报）
+     */
+    private Integer syncEnabled;
 }
 

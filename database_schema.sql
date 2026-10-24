@@ -69,6 +69,7 @@ CREATE TABLE `family_member` (
     `family_id` VARCHAR(36) NOT NULL COMMENT '家庭ID',
     `user_id` VARCHAR(36) NOT NULL COMMENT '用户ID',
     `role` INT(1) DEFAULT 0 COMMENT '角色：1-管理员，0-普通成员',
+    `sync_enabled` INT(1) DEFAULT 0 COMMENT '同步开关投影：1-开启云备份同步，0-休眠（客户端开关切换时上报，仅展示用途）',
     `created_by` VARCHAR(36) DEFAULT NULL COMMENT '创建人ID',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_by` VARCHAR(36) DEFAULT NULL COMMENT '修改人ID',

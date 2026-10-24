@@ -133,6 +133,29 @@ public class MobileFamilyController extends BaseController {
     }
 
     /**
+     * 上报同步开关投影（客户端云备份开关切换时调用）
+     * POST /families/sync-status
+     * 开关是账号级语义（vault.enabled 全家庭共享），服务端更新该用户
+     * 全部家庭行的 sync_enabled 投影，供其他成员感知休眠状态（D13 8.2）
+     */
+    @PostMapping("/families/sync-status")
+    public ResultVo reportSyncStatus(@RequestBody Map<String, Object> body, HttpServletRequest httpRequest) {
+        String userId = getCurrentUserId(httpRequest);
+        if (userId == null) {
+            return ResultVo.error("用户未登录");
+        }
+
+        Object enabledObj = body.get("enabled");
+        if (enabledObj == null) {
+            return ResultVo.error("enabled不能为空");
+        }
+        Integer syncEnabled = Boolean.TRUE.equals(enabledObj) ? 1 : 0;
+
+        boolean success = familyMemberService.updateSyncEnabledForAllFamilies(userId, syncEnabled);
+        return success ? ResultVo.success("更新成功") : ResultVo.error("更新失败");
+    }
+
+    /**
      * 获取家庭成员列表
      * GET /families/members
      */
@@ -178,12 +201,15 @@ public class MobileFamilyController extends BaseController {
                 member.setId(user.getId());
                 member.setName(user.getName() != null ? user.getName() : user.getUsername());
                 
-                // 从family_member表获取角色
+                // 从family_member表获取角色与同步开关投影
                 FamilyMember memberInfo = memberMap.get(user.getId());
                 if (memberInfo == null) {
                     member.setRole(0);
+                    member.setSyncEnabled(0);
                 }else {
                     member.setRole(memberInfo.getRole());
+                    // 老数据/未上报行为休眠展示（机制状态明文，仅展示用途）
+                    member.setSyncEnabled(memberInfo.getSyncEnabled() != null ? memberInfo.getSyncEnabled() : 0);
                 }
 
                 if (user.getAvatar() != null) {

@@ -49,5 +49,14 @@ public interface FamilyMemberService extends IService<FamilyMember> {
      * @return 角色：1-管理员，0-普通成员，null-不属于该家庭
      */
     Integer getMemberRole(String familyId, String userId);
+
+    /**
+     * 更新用户在全部家庭的同步开关投影（客户端云备份开关切换时上报，
+     * 开关是账号级语义，故不按家庭区分）
+     * @param userId 用户ID
+     * @param syncEnabled 1-开启同步，0-休眠
+     * @return 是否成功
+     */
+    boolean updateSyncEnabledForAllFamilies(String userId, Integer syncEnabled);
 }
 

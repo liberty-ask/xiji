@@ -86,4 +86,55 @@ class MobileFamilyControllerTest {
 
         verify(refreshTokenService, never()).revokeAll(any());
     }
+
+    // ── 8.2：同步开关投影上报（开关切换时全家庭行更新） ──
+
+    @Test
+    void reportSyncStatus_enabled_updatesAllFamilyRows() throws Exception {
+        when(familyMemberService.updateSyncEnabledForAllFamilies("1", 1)).thenReturn(true);
+
+        mockMvc.perform(post("/api/v1/families/sync-status")
+                        .requestAttr("userId", "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"enabled\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+
+        verify(familyMemberService).updateSyncEnabledForAllFamilies("1", 1);
+    }
+
+    @Test
+    void reportSyncStatus_disabled_projectsZero() throws Exception {
+        when(familyMemberService.updateSyncEnabledForAllFamilies("1", 0)).thenReturn(true);
+
+        mockMvc.perform(post("/api/v1/families/sync-status")
+                        .requestAttr("userId", "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"enabled\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+
+        verify(familyMemberService).updateSyncEnabledForAllFamilies("1", 0);
+    }
+
+    @Test
+    void reportSyncStatus_missingEnabled_rejected() throws Exception {
+        mockMvc.perform(post("/api/v1/families/sync-status")
+                        .requestAttr("userId", "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(jsonPath("$.code").value(500));
+
+        verify(familyMemberService, never()).updateSyncEnabledForAllFamilies(any(), any());
+    }
+
+    @Test
+    void reportSyncStatus_notSignedIn_rejected() throws Exception {
+        mockMvc.perform(post("/api/v1/families/sync-status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"enabled\":true}"))
+                .andExpect(jsonPath("$.code").value(500));
+
+        verify(familyMemberService, never()).updateSyncEnabledForAllFamilies(any(), any());
+    }
 }

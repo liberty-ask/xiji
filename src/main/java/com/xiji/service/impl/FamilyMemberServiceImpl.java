@@ -93,5 +93,23 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
         FamilyMember member = getOne(queryWrapper);
         return member != null ? member.getRole() : null;
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateSyncEnabledForAllFamilies(String userId, Integer syncEnabled) {
+        // 开关是账号级语义（客户端 vault.enabled 全家庭共享），一次更新
+        // 该用户全部家庭的投影行；机制状态明文不涉隐私（见 D13 8.2）
+        LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(FamilyMember::getUserId, userId);
+        FamilyMember update = new FamilyMember();
+        update.setSyncEnabled(syncEnabled);
+        boolean success = update(update, queryWrapper);
+        if (success) {
+            log.info("同步开关投影已更新，userId={}，syncEnabled={}", userId, syncEnabled);
+        } else {
+            log.warn("同步开关投影更新失败，userId={}，syncEnabled={}", userId, syncEnabled);
+        }
+        return success;
+    }
 }
 
