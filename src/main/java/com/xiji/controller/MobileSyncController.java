@@ -43,14 +43,17 @@ public class MobileSyncController extends BaseController {
 
     /**
      * 按游标增量拉取同步记录
-     * GET /api/v1/sync/pull?familyId=&cursorTime=&cursorId=&limit=
-     * 游标缺省时从头全量拉取（新设备恢复）
+     * GET /api/v1/sync/pull?familyId=&cursorTime=&cursorId=&limit=&recordId=
+     * 游标缺省时从头全量拉取（新设备恢复）；
+     * recordId 非空时精确拉取该单条记录（vault 探测等专项场景，1 次 RTT，
+     * 忽略游标；家庭归属不匹配时返回空，服务端对记录内容零感知不变）
      */
     @GetMapping("/pull")
     public ResultVo pull(@RequestParam String familyId,
                          @RequestParam(required = false) Long cursorTime,
                          @RequestParam(required = false) String cursorId,
                          @RequestParam(required = false) Integer limit,
+                         @RequestParam(required = false) String recordId,
                          HttpServletRequest httpRequest) {
         String userId = getCurrentUserId(httpRequest);
         if (userId == null) {
@@ -59,6 +62,6 @@ public class MobileSyncController extends BaseController {
         if (!familyMemberService.isMemberOfFamily(familyId, userId)) {
             return ResultVo.error("无该家庭的访问权限");
         }
-        return ResultVo.success(syncRecordService.pull(familyId, cursorTime, cursorId, limit));
+        return ResultVo.success(syncRecordService.pull(familyId, cursorTime, cursorId, limit, recordId));
     }
 }

@@ -33,7 +33,7 @@ public class SyncRecordServiceImpl extends ServiceImpl<SyncRecordMapper, SyncRec
         implements SyncRecordService {
 
     private static final int DEFAULT_PULL_LIMIT = 200;
-    private static final int MAX_PULL_LIMIT = 500;
+    private static final int MAX_PULL_LIMIT = 2000;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -113,7 +113,21 @@ public class SyncRecordServiceImpl extends ServiceImpl<SyncRecordMapper, SyncRec
     }
 
     @Override
-    public SyncPullResponse pull(String familyId, Long cursorTime, String cursorId, Integer limit) {
+    public SyncPullResponse pull(String familyId, Long cursorTime, String cursorId, Integer limit, String recordId) {
+        SyncPullResponse response = new SyncPullResponse();
+
+        // 精确拉取单条（vault 探测等专项场景）：忽略游标与分页，
+        // 家庭归属由 familyId 条件保证（不匹配即空结果）
+        if (recordId != null && !recordId.isEmpty()) {
+            LambdaQueryWrapper<SyncRecord> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SyncRecord::getFamilyId, familyId)
+                    .eq(SyncRecord::getId, recordId);
+            List<SyncRecord> records = list(wrapper);
+            response.setRecords(records.stream().map(this::toPullRecord).toList());
+            response.setHasMore(false);
+            return response;
+        }
+
         int effectiveLimit = (limit == null || limit <= 0) ? DEFAULT_PULL_LIMIT : Math.min(limit, MAX_PULL_LIMIT);
 
         LambdaQueryWrapper<SyncRecord> wrapper = new LambdaQueryWrapper<>();
@@ -131,7 +145,6 @@ public class SyncRecordServiceImpl extends ServiceImpl<SyncRecordMapper, SyncRec
 
         List<SyncRecord> records = list(wrapper);
 
-        SyncPullResponse response = new SyncPullResponse();
         boolean hasMore = records.size() > effectiveLimit;
         if (hasMore) {
             records = records.subList(0, effectiveLimit);

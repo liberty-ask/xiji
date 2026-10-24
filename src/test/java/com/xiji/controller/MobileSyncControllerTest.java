@@ -130,7 +130,7 @@ class MobileSyncControllerTest {
     @Test
     void pull_success_passesCursorAndLimit() throws Exception {
         when(familyMemberService.isMemberOfFamily("f1", "u1")).thenReturn(true);
-        when(syncRecordService.pull("f1", 123L, "abc", 50)).thenReturn(pullResponse());
+        when(syncRecordService.pull("f1", 123L, "abc", 50, null)).thenReturn(pullResponse());
 
         mockMvc.perform(get("/api/v1/sync/pull")
                         .requestAttr("userId", "u1")
@@ -144,20 +144,35 @@ class MobileSyncControllerTest {
                 .andExpect(jsonPath("$.data.records[0].nonce").value("AQID"))
                 .andExpect(jsonPath("$.data.hasMore").value(false));
 
-        verify(syncRecordService).pull("f1", 123L, "abc", 50);
+        verify(syncRecordService).pull("f1", 123L, "abc", 50, null);
     }
 
     @Test
     void pull_newDevice_noCursor_fullPull() throws Exception {
         when(familyMemberService.isMemberOfFamily("f1", "u1")).thenReturn(true);
-        when(syncRecordService.pull("f1", null, null, null)).thenReturn(pullResponse());
+        when(syncRecordService.pull("f1", null, null, null, null)).thenReturn(pullResponse());
 
         mockMvc.perform(get("/api/v1/sync/pull")
                         .requestAttr("userId", "u1")
                         .param("familyId", "f1"))
                 .andExpect(jsonPath("$.code").value(200));
 
-        verify(syncRecordService).pull("f1", null, null, null);
+        verify(syncRecordService).pull("f1", null, null, null, null);
+    }
+
+    @Test
+    void pull_byRecordId_passesThrough() throws Exception {
+        when(familyMemberService.isMemberOfFamily("f1", "u1")).thenReturn(true);
+        when(syncRecordService.pull("f1", null, null, null, "vault-u1")).thenReturn(pullResponse());
+
+        mockMvc.perform(get("/api/v1/sync/pull")
+                        .requestAttr("userId", "u1")
+                        .param("familyId", "f1")
+                        .param("recordId", "vault-u1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+
+        verify(syncRecordService).pull("f1", null, null, null, "vault-u1");
     }
 
     @Test
@@ -170,6 +185,6 @@ class MobileSyncControllerTest {
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value("无该家庭的访问权限"));
 
-        verify(syncRecordService, never()).pull(anyString(), any(), anyString(), any());
+        verify(syncRecordService, never()).pull(anyString(), any(), anyString(), any(), any());
     }
 }

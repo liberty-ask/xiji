@@ -225,7 +225,7 @@ class SyncRecordServiceImplTest {
         when(syncRecordMapper.selectList(any())).thenReturn(List.of(
                 existing("r1", "f1", 1, 1000, 0)));
 
-        SyncPullResponse response = syncRecordService.pull("f1", null, null, null);
+        SyncPullResponse response = syncRecordService.pull("f1", null, null, null, null);
 
         assertEquals(1, response.getRecords().size());
         assertFalse(response.isHasMore());
@@ -242,7 +242,7 @@ class SyncRecordServiceImplTest {
     void pull_withCursor_buildsTupleCondition() {
         when(syncRecordMapper.selectList(any())).thenReturn(List.of());
 
-        syncRecordService.pull("f1", 5000L, "abc", 50);
+        syncRecordService.pull("f1", 5000L, "abc", 50, null);
 
         ArgumentCaptor<LambdaQueryWrapper<SyncRecord>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
         verify(syncRecordMapper).selectList(captor.capture());
@@ -261,7 +261,7 @@ class SyncRecordServiceImplTest {
                 existing("r2", "f1", 2, 2000, 0),
                 existing("r3", "f1", 3, 3000, 1)));
 
-        SyncPullResponse response = syncRecordService.pull("f1", null, null, 2);
+        SyncPullResponse response = syncRecordService.pull("f1", null, null, 2, null);
 
         assertTrue(response.isHasMore());
         assertEquals(2, response.getRecords().size());
@@ -277,7 +277,7 @@ class SyncRecordServiceImplTest {
                 existing("r1", "f1", 1, 1000, 0),
                 existing("r2", "f1", 2, 2000, 0)));
 
-        SyncPullResponse response = syncRecordService.pull("f1", null, null, 2);
+        SyncPullResponse response = syncRecordService.pull("f1", null, null, 2, null);
 
         assertFalse(response.isHasMore());
         assertNull(response.getNextCursorTime());
@@ -294,7 +294,7 @@ class SyncRecordServiceImplTest {
         record.setCiphertext(ciphertext);
         when(syncRecordMapper.selectList(any())).thenReturn(List.of(record));
 
-        SyncPullResponse response = syncRecordService.pull("f1", null, null, 10);
+        SyncPullResponse response = syncRecordService.pull("f1", null, null, 10, null);
 
         SyncPullRecord item = response.getRecords().get(0);
         assertEquals("r1", item.getId());
@@ -303,5 +303,52 @@ class SyncRecordServiceImplTest {
         assertEquals(1, item.getDeleted());
         assertEquals(Base64.getEncoder().encodeToString(nonce), item.getNonce());
         assertEquals(Base64.getEncoder().encodeToString(ciphertext), item.getCiphertext());
+    }
+
+    // ========== pull：recordId 精确拉取（vault 探测）与 limit 上限 ==========
+
+    @Test
+    void pull_byRecordId_buildsExactConditionIgnoringCursorAndLimit() {
+        when(syncRecordMapper.selectList(any())).thenReturn(List.of(
+                existing("vault-u1", "f1", 3, 1, 0)));
+
+        SyncPullResponse response =
+                syncRecordService.pull("f1", 9999L, "zzz", 5000, "vault-u1");
+
+        assertEquals(1, response.getRecords().size());
+        assertEquals("vault-u1", response.getRecords().get(0).getId());
+        assertFalse(response.isHasMore());
+        assertNull(response.getNextCursorTime());
+        ArgumentCaptor<LambdaQueryWrapper<SyncRecord>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(syncRecordMapper).selectList(captor.capture());
+        String sql = captor.getValue().getSqlSegment();
+        // 双条件：家庭归属 + 精确 id；无游标元组、无 LIMIT 分页
+        assertTrue(sql.contains("family_id"));
+        assertTrue(sql.contains("id"));
+        assertFalse(sql.contains("OR"));
+        assertFalse(sql.contains("LIMIT"));
+    }
+
+    @Test
+    void pull_byRecordId_notFound_returnsEmpty() {
+        when(syncRecordMapper.selectList(any())).thenReturn(List.of());
+
+        SyncPullResponse response =
+                syncRecordService.pull("f1", null, null, null, "vault-none");
+
+        assertTrue(response.getRecords().isEmpty());
+        assertFalse(response.isHasMore());
+    }
+
+    @Test
+    void pull_limitAboveMax_clampedTo2000() {
+        when(syncRecordMapper.selectList(any())).thenReturn(List.of());
+
+        syncRecordService.pull("f1", null, null, 99999, null);
+
+        ArgumentCaptor<LambdaQueryWrapper<SyncRecord>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(syncRecordMapper).selectList(captor.capture());
+        String sql = captor.getValue().getSqlSegment();
+        assertTrue(sql.contains("LIMIT 2001"));
     }
 }

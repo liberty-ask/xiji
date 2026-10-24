@@ -28,13 +28,15 @@ public interface SyncRecordService extends IService<SyncRecord> {
 
     /**
      * 按游标增量拉取同步记录
-     * 按 (updated_at, id) 升序分页；游标缺省时从头全量拉取（新设备恢复）。
+     * 按 (updated_at, id) 升序分页；游标缺省时从头全量拉取（新设备恢复）；
+     * recordId 非空时精确拉取该单条（忽略游标，家庭不匹配返回空）。
      *
      * @param familyId    家庭ID（调用方已完成成员归属校验）
      * @param cursorTime  游标-更新时间（毫秒时间戳，UTC），null 表示全量
      * @param cursorId    游标-记录ID，null 表示全量
      * @param limit       每页条数，null/非正数取默认值，超过上限截断
+     * @param recordId    精确拉取的记录ID，null 走游标分页
      * @return 本页记录与下一页游标
      */
-    SyncPullResponse pull(String familyId, Long cursorTime, String cursorId, Integer limit);
+    SyncPullResponse pull(String familyId, Long cursorTime, String cursorId, Integer limit, String recordId);
 }
