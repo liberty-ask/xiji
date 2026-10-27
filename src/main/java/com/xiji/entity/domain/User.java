@@ -19,8 +19,8 @@ import lombok.EqualsAndHashCode;
 @Schema(description = "用户实体")
 public class User extends BaseEntity {
 
-    @TableId(type = IdType.INPUT)
-    private String id;
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
 
     private String username;
 
@@ -42,6 +42,6 @@ public class User extends BaseEntity {
     /**
      * 当前选择的家庭ID
      */
-    private String currentFamilyId;
+    private Long currentFamilyId;
 }
 

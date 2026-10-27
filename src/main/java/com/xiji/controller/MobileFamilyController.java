@@ -79,14 +79,14 @@ public class MobileFamilyController extends BaseController {
         // 转换为响应DTO
         List<MobileFamilyResponse> responseList = families.stream().map(family -> {
             MobileFamilyResponse response = new MobileFamilyResponse();
-            response.setId(family.getId());
+            response.setId(String.valueOf(family.getId()));
             response.setName(family.getName());
-            response.setIsCurrent(family.getId().equals(currentFamilyId));
-            
+            response.setIsCurrent(String.valueOf(family.getId()).equals(currentFamilyId));
+
             // 获取用户在家庭中的角色
-            Integer role = familyMemberService.getMemberRole(family.getId(), userId);
+            Integer role = familyMemberService.getMemberRole(String.valueOf(family.getId()), userId);
             response.setRole(role);
-            
+
             return response;
         }).collect(Collectors.toList());
 
@@ -122,7 +122,7 @@ public class MobileFamilyController extends BaseController {
             return ResultVo.error("用户不存在");
         }
 
-        user.setCurrentFamilyId(familyId);
+        user.setCurrentFamilyId(Long.valueOf(familyId));
         // 更新时间由MyBatis-Plus自动填充
 
         if (userService.updateById(user)) {
@@ -182,7 +182,7 @@ public class MobileFamilyController extends BaseController {
                 .eq(FamilyMember::getFamilyId, currentUser.getCurrentFamilyId()));
 
         // 获取成员的用户信息
-        List<String> memberUserIds = members.stream()
+        List<Long> memberUserIds = members.stream()
             .map(FamilyMember::getUserId)
             .collect(Collectors.toList());
 
@@ -191,14 +191,14 @@ public class MobileFamilyController extends BaseController {
         }
 
         List<User> users = userService.listByIds(memberUserIds);
-        Map<String, FamilyMember> memberMap = members.stream()
+        Map<Long, FamilyMember> memberMap = members.stream()
             .collect(Collectors.toMap(FamilyMember::getUserId, m -> m));
 
         List<MobileFamilyMemberResponse> responseList = users.stream()
             .filter(user -> user.getStatus() == null || user.getStatus() == 0) // 只查询正常状态的用户
             .map(user -> {
                 MobileFamilyMemberResponse member = new MobileFamilyMemberResponse();
-                member.setId(user.getId());
+                member.setId(String.valueOf(user.getId()));
                 member.setName(user.getName() != null ? user.getName() : user.getUsername());
                 
                 // 从family_member表获取角色与同步开关投影
@@ -241,18 +241,18 @@ public class MobileFamilyController extends BaseController {
         }
 
         // 检查是否为家庭管理员
-        Integer role = familyMemberService.getMemberRole(currentUser.getCurrentFamilyId(), userId);
+        Integer role = familyMemberService.getMemberRole(String.valueOf(currentUser.getCurrentFamilyId()), userId);
         if (role == null || role != 1) {
             return ResultVo.error("只有家庭管理员可以查看申请");
         }
 
         // 查询待审核申请
-        List<FamilyApplication> applications = familyApplicationService.getPendingApplications(currentUser.getCurrentFamilyId());
+        List<FamilyApplication> applications = familyApplicationService.getPendingApplications(String.valueOf(currentUser.getCurrentFamilyId()));
         
         // 转换为响应DTO
         List<MobilePendingApplicationResponse> responseList = applications.stream().map(app -> {
             MobilePendingApplicationResponse response = new MobilePendingApplicationResponse();
-            response.setId(app.getId());
+            response.setId(String.valueOf(app.getId()));
             
             // 查询申请人信息
             User applicant = userService.getById(app.getUserId());
@@ -316,7 +316,7 @@ public class MobileFamilyController extends BaseController {
             return ResultVo.error("用户不存在");
         }
         
-        Integer role = familyMemberService.getMemberRole(application.getFamilyId(), userId);
+        Integer role = familyMemberService.getMemberRole(String.valueOf(application.getFamilyId()), userId);
         if (role == null || role != 1) {
             return ResultVo.error("只有家庭管理员可以处理申请");
         }
@@ -349,14 +349,14 @@ public class MobileFamilyController extends BaseController {
         }
 
         MobileProfileResponse response = new MobileProfileResponse();
-        response.setId(user.getId());
+        response.setId(String.valueOf(user.getId()));
         response.setPhone(user.getPhone());
         response.setNickname(user.getName() != null ? user.getName() : user.getUsername());
         response.setEmail(user.getEmail());
         // 从当前家庭获取角色
         int role = 0; // 默认普通成员
         if (user.getCurrentFamilyId() != null) {
-            Integer memberRole = familyMemberService.getMemberRole(user.getCurrentFamilyId(), userId);
+            Integer memberRole = familyMemberService.getMemberRole(String.valueOf(user.getCurrentFamilyId()), userId);
             role = memberRole != null ? memberRole : 0;
         }
         response.setRole(role);
@@ -366,11 +366,11 @@ public class MobileFamilyController extends BaseController {
         
         // 设置当前选择的家庭ID
         if (user.getCurrentFamilyId() != null) {
-            response.setFamilyId(user.getCurrentFamilyId());
+            response.setFamilyId(String.valueOf(user.getCurrentFamilyId()));
             
             // 如果是家庭管理员，返回待审核申请数量
             if (role == 1) {
-                List<FamilyApplication> pendingApps = familyApplicationService.getPendingApplications(user.getCurrentFamilyId());
+                List<FamilyApplication> pendingApps = familyApplicationService.getPendingApplications(String.valueOf(user.getCurrentFamilyId()));
                 response.setAuditCount(pendingApps.size());
             }
         } else {
@@ -446,7 +446,7 @@ public class MobileFamilyController extends BaseController {
             return ResultVo.error("您还没有选择家庭");
         }
         
-        String familyId = user.getCurrentFamilyId();
+        String familyId = String.valueOf(user.getCurrentFamilyId());
         
         // 检查是否为家庭管理员（管理员不能退出，需要先转移管理权）
         Integer role = familyMemberService.getMemberRole(familyId, userId);
@@ -459,11 +459,11 @@ public class MobileFamilyController extends BaseController {
         
         if (success) {
             // 如果退出的是当前选择的家庭，清空当前家庭ID
-            if (user.getCurrentFamilyId().equals(familyId)) {
+            if (String.valueOf(user.getCurrentFamilyId()).equals(familyId)) {
                 // 切换到其他家庭（如果有）
                 List<String> otherFamilyIds = familyMemberService.getUserFamilyIds(userId);
                 if (!otherFamilyIds.isEmpty()) {
-                    user.setCurrentFamilyId(otherFamilyIds.get(0));
+                    user.setCurrentFamilyId(Long.valueOf(otherFamilyIds.get(0)));
                 } else {
                     user.setCurrentFamilyId(null);
                 }

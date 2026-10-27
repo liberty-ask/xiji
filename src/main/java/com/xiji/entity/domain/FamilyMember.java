@@ -18,18 +18,18 @@ public class FamilyMember extends BaseEntity {
     /**
      * 关联ID
      */
-    @TableId(type = IdType.INPUT)
-    private String id;
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
      * 家庭ID
      */
-    private String familyId;
+    private Long familyId;
 
     /**
      * 用户ID
      */
-    private String userId;
+    private Long userId;
     
     /**
      * 角色：1-管理员，0-普通成员

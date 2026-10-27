@@ -18,17 +18,17 @@ public class Family extends BaseEntity {
     /**
      * 家庭ID
      */
-    @TableId(type = IdType.INPUT)
-    private String id;
-    
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
+
     /**
      * 家庭名称
      */
     private String name;
-    
+
     /**
      * 创建者ID（家庭管理员）
      */
-    private String ownerId;
+    private Long ownerId;
 }
 

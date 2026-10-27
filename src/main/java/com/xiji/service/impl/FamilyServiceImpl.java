@@ -23,9 +23,8 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family> impleme
     @Transactional(rollbackFor = Exception.class)
     public Family createFamily(String name, String ownerId) {
         Family family = new Family();
-        family.setId(java.util.UUID.randomUUID().toString());
         family.setName(name);
-        family.setOwnerId(ownerId);
+        family.setOwnerId(Long.valueOf(ownerId));
         family.setCreatedAt(LocalDateTime.now());
         family.setUpdatedAt(LocalDateTime.now());
         

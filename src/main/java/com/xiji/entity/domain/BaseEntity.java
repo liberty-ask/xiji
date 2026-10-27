@@ -18,7 +18,7 @@ public class BaseEntity implements Serializable {
     /**
      * 创建人ID
      */
-    private String createdBy;
+    private Long createdBy;
 
     /**
      * 创建时间（自动填充）
@@ -29,7 +29,7 @@ public class BaseEntity implements Serializable {
     /**
      * 修改人ID
      */
-    private String updatedBy;
+    private Long updatedBy;
 
     /**
      * 修改时间（自动填充）

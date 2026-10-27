@@ -2,6 +2,7 @@ package com.xiji.controller;
 
 import cn.hutool.core.util.PhoneUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.xiji.common.annotation.OperationLog;
 import com.xiji.common.response.ResultVo;
 import com.xiji.entity.domain.Family;
 import com.xiji.entity.domain.User;
@@ -92,6 +93,7 @@ public class MobileAuthController {
      * 登录
      * POST /login
      */
+    @OperationLog(description = "用户登录")
     @PostMapping("/login")
     public ResultVo login(@RequestBody MobileLoginRequest request) {
         String mode = StringUtils.isNotEmpty(request.getMode()) ? request.getMode() : "password";
@@ -188,11 +190,13 @@ public class MobileAuthController {
         MobileLoginResponse response = new MobileLoginResponse();
         MobileUserResponse userResponse = new MobileUserResponse();
         BeanUtils.copyProperties(user, userResponse);
+        // Long ID -> String DTO 字段（BeanUtils 类型不匹配会跳过，手动补齐）
+        userResponse.setId(String.valueOf(user.getId()));
 
         // 从当前家庭获取角色
         int role = 0; // 默认普通成员
         if (user.getCurrentFamilyId() != null) {
-            Integer memberRole = familyMemberService.getMemberRole(user.getCurrentFamilyId(), user.getId());
+            Integer memberRole = familyMemberService.getMemberRole(String.valueOf(user.getCurrentFamilyId()), String.valueOf(user.getId()));
             role = memberRole != null ? memberRole : 0;
         }
         userResponse.setRole(role);
@@ -208,10 +212,11 @@ public class MobileAuthController {
         // 生成JWT Token（不再包含role，权限检查时从家庭成员表获取）
         Map<String, Object> claims = new HashMap<>();
         claims.put("username", user.getUsername());
-        claims.put("id", user.getId());
+        // id 一律字符串化：19 位雪花超 JS 2^53 精度，JWT/JSON 数字域均会截断
+        claims.put("id", String.valueOf(user.getId()));
         // 双token：access（短有效期）+ refresh（长有效期）
         response.setAccessToken(JwtUtils.generateJwt(claims, JwtUtils.getAccessExpire()));
-        response.setRefreshToken(refreshTokenService.generate(user.getId()));
+        response.setRefreshToken(refreshTokenService.generate(String.valueOf(user.getId())));
         response.setUser(userResponse);
 
         log.info("用户登录成功，userId={}，mode={}", user.getId(), mode);
@@ -247,7 +252,7 @@ public class MobileAuthController {
         String newRefreshToken = refreshTokenService.rotate(refreshToken, userId);
         Map<String, Object> claims = new HashMap<>();
         claims.put("username", user.getUsername());
-        claims.put("id", user.getId());
+        claims.put("id", String.valueOf(user.getId()));
 
         Map<String, Object> data = new HashMap<>();
         data.put("accessToken", JwtUtils.generateJwt(claims, JwtUtils.getAccessExpire()));
@@ -259,6 +264,7 @@ public class MobileAuthController {
      * 登出（要求有效access token）
      * POST /logout
      */
+    @OperationLog(description = "用户登出")
     @PostMapping("/logout")
     public ResultVo logout(HttpServletRequest request) {
         String userId = (String) request.getAttribute("userId");
@@ -306,6 +312,7 @@ public class MobileAuthController {
      * 注册
      * POST /register
      */
+    @OperationLog(description = "用户注册")
     @PostMapping("/register")
     @Transactional(rollbackFor = Exception.class)
     public ResultVo register(@Valid @RequestBody MobileRegisterRequest request) {
@@ -322,47 +329,46 @@ public class MobileAuthController {
         }
         
         try {
-            // 创建用户
+            // 创建用户（ID 由 MyBatis-Plus 雪花算法生成）
             User user = new User();
             user.setUsername(request.getPhone()); // 使用手机号作为用户名
             user.setName(request.getNickname());
             user.setPhone(request.getPhone());
             user.setPassword(PasswordUtils.encode(request.getPassword()));
             user.setStatus(0); // 默认正常状态
-            user.setId(java.util.UUID.randomUUID().toString());
             // 创建时间和更新时间由MyBatis-Plus自动填充
             if (!userService.save(user)) {
                 return ResultVo.error("注册失败");
             }
             
             // 注册成功后，自动创建家庭
-            String familyId = null;
+            String familyId;
             int role = 0; // 默认普通成员
             
             String familyName = request.getNickname() + "的家庭";
-            Family family = familyService.createFamily(familyName, user.getId());
-            familyId = family.getId();
+            Family family = familyService.createFamily(familyName, String.valueOf(user.getId()));
+            familyId = String.valueOf(family.getId());
             // 将用户加入家庭（通过family_member表），创建者自动成为管理员
-            familyMemberService.addMemberToFamily(familyId, user.getId(), 1);
+            familyMemberService.addMemberToFamily(familyId, String.valueOf(user.getId()), 1);
             role = 1; // 创建者自动成为管理员
             // 设置当前选择的家庭
-            user.setCurrentFamilyId(familyId);
+            user.setCurrentFamilyId(family.getId());
             userService.updateById(user);
             log.info("用户注册成功并创建家庭，userId={}，familyId={}", user.getId(), familyId);
             
             // 生成JWT Token（不再包含role，权限检查时从家庭成员表获取）
             Map<String, Object> claims = new HashMap<>();
             claims.put("username", user.getUsername());
-            claims.put("id", user.getId());
+            claims.put("id", String.valueOf(user.getId()));
 
             // 构建响应
             MobileLoginResponse response = new MobileLoginResponse();
             // 双token：access（短有效期）+ refresh（长有效期）
             response.setAccessToken(JwtUtils.generateJwt(claims, JwtUtils.getAccessExpire()));
-            response.setRefreshToken(refreshTokenService.generate(user.getId()));
+            response.setRefreshToken(refreshTokenService.generate(String.valueOf(user.getId())));
             
             MobileUserResponse userResponse = new MobileUserResponse();
-            userResponse.setId(user.getId());
+            userResponse.setId(String.valueOf(user.getId()));
             userResponse.setNickname(user.getName());
             userResponse.setPhone(user.getPhone());
             userResponse.setRole(role);
@@ -383,6 +389,7 @@ public class MobileAuthController {
      * 发送忘记密码验证码
      * POST /forgot-password/send-code
      */
+    @OperationLog(description = "忘记密码发送验证码")
     @PostMapping("/forgot-password/send-code")
     public ResultVo sendForgotPasswordCode(@Valid @RequestBody SendSmsCodeRequest request) {
         String phone = request.getPhone();
@@ -417,6 +424,7 @@ public class MobileAuthController {
      * 重置密码
      * POST /forgot-password/reset
      */
+    @OperationLog(description = "重置密码")
     @PostMapping("/forgot-password/reset")
     public ResultVo resetPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         if (!PhoneUtil.isPhone(request.getPhone())) {

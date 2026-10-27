@@ -6,8 +6,6 @@
 -- 删除表（如果存在，用于重新创建）
 DROP TABLE IF EXISTS `sync_records`;
 DROP TABLE IF EXISTS `operation_logs`;
-DROP TABLE IF EXISTS `transactions`;
-DROP TABLE IF EXISTS `category`;
 DROP TABLE IF EXISTS `family_application`;
 DROP TABLE IF EXISTS `family_member`;
 DROP TABLE IF EXISTS `family`;
@@ -17,7 +15,7 @@ DROP TABLE IF EXISTS `user`;
 -- 1. 用户表
 -- ============================================
 CREATE TABLE `user` (
-    `id` VARCHAR(36) NOT NULL COMMENT '用户ID（UUID生成）',
+    `id` BIGINT NOT NULL COMMENT '用户ID（雪花算法生成）',
     `username` VARCHAR(50) NOT NULL COMMENT '用户名',
     `password` VARCHAR(255) NOT NULL COMMENT '密码（BCrypt加密）',
     `email` VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
@@ -25,10 +23,10 @@ CREATE TABLE `user` (
     `name` VARCHAR(50) DEFAULT NULL COMMENT '姓名',
     `avatar` VARCHAR(255) DEFAULT NULL COMMENT '头像路径',
     `status` INT(1) DEFAULT 0 COMMENT '状态：0-正常，1-禁用',
-    `current_family_id` VARCHAR(36) DEFAULT NULL COMMENT '当前选择的家庭ID',
-    `created_by` VARCHAR(36) DEFAULT NULL COMMENT '创建人ID',
+    `current_family_id` BIGINT DEFAULT NULL COMMENT '当前选择的家庭ID',
+    `created_by` BIGINT DEFAULT NULL COMMENT '创建人ID',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_by` VARCHAR(36) DEFAULT NULL COMMENT '修改人ID',
+    `updated_by` BIGINT DEFAULT NULL COMMENT '修改人ID',
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` INT(1) DEFAULT 0 COMMENT '逻辑删除标识：0-未删除，1-已删除',
     PRIMARY KEY (`id`),
@@ -45,12 +43,12 @@ INSERT INTO user (`id`, `username`, `password`, `email`, `phone`, `name`, `statu
 -- 2. 家庭表
 -- ============================================
 CREATE TABLE `family` (
-    `id` VARCHAR(36) NOT NULL COMMENT '家庭ID（UUID生成）',
+    `id` BIGINT NOT NULL COMMENT '家庭ID（雪花算法生成）',
     `name` VARCHAR(100) NOT NULL COMMENT '家庭名称',
-    `owner_id` VARCHAR(36) NOT NULL COMMENT '创建者ID（家庭管理员）',
-    `created_by` VARCHAR(36) DEFAULT NULL COMMENT '创建人ID',
+    `owner_id` BIGINT NOT NULL COMMENT '创建者ID（家庭管理员）',
+    `created_by` BIGINT DEFAULT NULL COMMENT '创建人ID',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_by` VARCHAR(36) DEFAULT NULL COMMENT '修改人ID',
+    `updated_by` BIGINT DEFAULT NULL COMMENT '修改人ID',
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` INT(1) DEFAULT 0 COMMENT '逻辑删除标识：0-未删除，1-已删除',
     PRIMARY KEY (`id`),
@@ -65,14 +63,14 @@ INSERT INTO family (`id`, `name`, `owner_id`, `created_by`, `created_at`, `updat
 -- 3. 家庭成员关联表
 -- ============================================
 CREATE TABLE `family_member` (
-    `id` VARCHAR(36) NOT NULL COMMENT '关联ID（UUID生成）',
-    `family_id` VARCHAR(36) NOT NULL COMMENT '家庭ID',
-    `user_id` VARCHAR(36) NOT NULL COMMENT '用户ID',
+    `id` BIGINT NOT NULL COMMENT '关联ID（雪花算法生成）',
+    `family_id` BIGINT NOT NULL COMMENT '家庭ID',
+    `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `role` INT(1) DEFAULT 0 COMMENT '角色：1-管理员，0-普通成员',
     `sync_enabled` INT(1) DEFAULT 0 COMMENT '同步开关投影：1-开启云备份同步，0-休眠（客户端开关切换时上报，仅展示用途）',
-    `created_by` VARCHAR(36) DEFAULT NULL COMMENT '创建人ID',
+    `created_by` BIGINT DEFAULT NULL COMMENT '创建人ID',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_by` VARCHAR(36) DEFAULT NULL COMMENT '修改人ID',
+    `updated_by` BIGINT DEFAULT NULL COMMENT '修改人ID',
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` INT(1) DEFAULT 0 COMMENT '逻辑删除标识：0-未删除，1-已删除',
     PRIMARY KEY (`id`),
@@ -88,14 +86,14 @@ INSERT INTO family_member (`id`, `family_id`, `user_id`, `role`, `created_by`, `
 -- 4. 家庭申请表
 -- ============================================
 CREATE TABLE `family_application` (
-    `id` VARCHAR(36) NOT NULL COMMENT '申请ID（UUID生成）',
-    `family_id` VARCHAR(36) NOT NULL COMMENT '家庭ID',
-    `user_id` VARCHAR(36) NOT NULL COMMENT '申请人ID',
+    `id` BIGINT NOT NULL COMMENT '申请ID（雪花算法生成）',
+    `family_id` BIGINT NOT NULL COMMENT '家庭ID',
+    `user_id` BIGINT NOT NULL COMMENT '申请人ID',
     `status` INT(1) DEFAULT 0 COMMENT '状态：0-待审核，1-已批准，2-已拒绝',
     `note` VARCHAR(500) DEFAULT NULL COMMENT '申请备注',
-    `created_by` VARCHAR(36) DEFAULT NULL COMMENT '创建人ID',
+    `created_by` BIGINT DEFAULT NULL COMMENT '创建人ID',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_by` VARCHAR(36) DEFAULT NULL COMMENT '修改人ID',
+    `updated_by` BIGINT DEFAULT NULL COMMENT '修改人ID',
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` INT(1) DEFAULT 0 COMMENT '逻辑删除标识：0-未删除，1-已删除',
     PRIMARY KEY (`id`),
@@ -106,76 +104,19 @@ CREATE TABLE `family_application` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='家庭申请表';
 
 -- ============================================
--- 5. 收支类别表
--- ============================================
-CREATE TABLE `category` (
-    `id` VARCHAR(36) NOT NULL COMMENT '类别ID（UUID生成）',
-    `name` VARCHAR(50) NOT NULL COMMENT '类别名称',
-    `icon` VARCHAR(100) DEFAULT NULL COMMENT '类别图标',
-    `sort_order` INT(11) DEFAULT 0 COMMENT '排序序号（数字越小越靠前）',
-    `status` INT(1) DEFAULT 1 COMMENT '是否启用：1-启用，0-禁用',
-    `family_id` VARCHAR(36) DEFAULT NULL COMMENT '家庭ID（NULL表示系统默认分类，有值表示该家庭的自定义分类）',
-    `type` INT(1) NOT NULL COMMENT '类别类型：0-收入，1-支出',
-    `created_by` VARCHAR(36) DEFAULT NULL COMMENT '创建人ID',
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_by` VARCHAR(36) DEFAULT NULL COMMENT '修改人ID',
-    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` INT(1) DEFAULT 0 COMMENT '逻辑删除标识：0-未删除，1-已删除',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_name_type_family` (`name`, `type`, `family_id`, `deleted`),
-    KEY `idx_status` (`status`),
-    KEY `idx_sort_order` (`sort_order`),
-    KEY `idx_family_id` (`family_id`),
-    KEY `idx_type` (`type`),
-    KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收支类别表';
-
--- ============================================
--- 6. 交易记录表
--- ============================================
-CREATE TABLE `transactions` (
-    `id` VARCHAR(36) NOT NULL COMMENT '交易记录ID（UUID生成）',
-    `family_id` VARCHAR(36) NOT NULL COMMENT '家庭ID',
-    `type` INT(1) NOT NULL COMMENT '交易类型：0-收入，1-支出',
-    `amount` DECIMAL(20,2) NOT NULL COMMENT '金额',
-    `category_id` VARCHAR(36) NOT NULL COMMENT '类别ID（关联category表）',
-    `pay_method` VARCHAR(50) DEFAULT NULL COMMENT '支付方式',
-    `date` DATE NOT NULL COMMENT '交易日期',
-    `description` VARCHAR(500) DEFAULT NULL COMMENT '描述',
-    `trade_no` VARCHAR(100) DEFAULT NULL COMMENT '交易单号（用于去重，账单导入时使用）',
-    `merchant_order_no` VARCHAR(100) DEFAULT NULL COMMENT '商家订单号/商户单号',
-    `platform` VARCHAR(50) DEFAULT NULL COMMENT '平台来源（支付宝、微信、京东、招商银行等，账单导入时使用）',
-    `created_by` VARCHAR(36) DEFAULT NULL COMMENT '创建人ID',
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_by` VARCHAR(36) DEFAULT NULL COMMENT '修改人ID',
-    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` INT(1) DEFAULT 0 COMMENT '逻辑删除标识：0-未删除，1-已删除',
-    PRIMARY KEY (`id`),
-    KEY `idx_family_id` (`family_id`),
-    KEY `idx_category_id` (`category_id`),
-    KEY `idx_date` (`date`),
-    KEY `idx_type` (`type`),
-    KEY `idx_family_date` (`family_id`, `date`),
-    KEY `idx_family_trade_no` (`family_id`, `trade_no`),
-    KEY `idx_platform` (`platform`),
-    KEY `idx_family_platform` (`family_id`, `platform`),
-    KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='交易记录表';
-
--- ============================================
--- 7. 操作日志表
+-- 5. 操作日志表
 -- ============================================
 CREATE TABLE `operation_logs` (
-    `id` VARCHAR(36) NOT NULL COMMENT '日志ID（UUID生成）',
+    `id` BIGINT NOT NULL COMMENT '日志ID（雪花算法生成）',
     `description` VARCHAR(255) DEFAULT NULL COMMENT '操作描述',
     `url` VARCHAR(255) DEFAULT NULL COMMENT '请求URL',
     `method` VARCHAR(10) DEFAULT NULL COMMENT '请求方法',
     `ip` VARCHAR(50) DEFAULT NULL COMMENT 'IP地址',
     `params` TEXT DEFAULT NULL COMMENT '请求参数',
     `exception` TEXT DEFAULT NULL COMMENT '异常信息',
-    `created_by` VARCHAR(36) DEFAULT NULL COMMENT '创建人ID',
+    `created_by` BIGINT DEFAULT NULL COMMENT '创建人ID',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_by` VARCHAR(36) DEFAULT NULL COMMENT '修改人ID',
+    `updated_by` BIGINT DEFAULT NULL COMMENT '修改人ID',
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` INT(1) DEFAULT 0 COMMENT '逻辑删除标识：0-未删除，1-已删除',
     PRIMARY KEY (`id`),
@@ -185,25 +126,7 @@ CREATE TABLE `operation_logs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
 
 -- ============================================
--- 8. 预算表
--- ============================================
-CREATE TABLE `budget` (
-    `id` VARCHAR(36) NOT NULL COMMENT '预算ID（UUID生成）',
-    `family_id` VARCHAR(36) NOT NULL COMMENT '家庭ID',
-    `amount` DECIMAL(20,2) NOT NULL COMMENT '预算金额',
-    `created_by` VARCHAR(36) DEFAULT NULL COMMENT '创建人ID',
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_by` VARCHAR(36) DEFAULT NULL COMMENT '修改人ID',
-    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` INT(1) DEFAULT 0 COMMENT '逻辑删除标识：0-未删除，1-已删除',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_family_year_month_type` (`family_id`, `deleted`),
-    KEY `idx_family_id` (`family_id`),
-    KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='预算表';
-
--- ============================================
--- 9. 端到端加密同步记录表
+-- 6. 端到端加密同步记录表
 -- 服务端密文哑仓库：业务字段全部在 ciphertext 密文内，
 -- 仅同步机制必要字段（id/家庭ID/version/updated_at/deleted/nonce）明文。
 -- 注意：deleted 为墓碑业务字段（非逻辑删除），服务端不做物理删除、墓碑必须可查询。

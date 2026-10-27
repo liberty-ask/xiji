@@ -29,7 +29,7 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
         queryWrapper.eq(FamilyMember::getUserId, userId);
         List<FamilyMember> members = list(queryWrapper);
         return members.stream()
-            .map(FamilyMember::getFamilyId)
+            .map(m -> String.valueOf(m.getFamilyId()))
             .collect(Collectors.toList());
     }
     
@@ -46,9 +46,8 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
         }
         
         FamilyMember member = new FamilyMember();
-        member.setId(java.util.UUID.randomUUID().toString());
-        member.setFamilyId(familyId);
-        member.setUserId(userId);
+        member.setFamilyId(Long.valueOf(familyId));
+        member.setUserId(Long.valueOf(userId));
         member.setRole(role != null ? role : 0);
         member.setCreatedAt(LocalDateTime.now());
         

@@ -54,7 +54,7 @@ public class PermissionCheckAspect {
             }
 
             // 获取当前选择的家庭ID
-            String familyId = user.getCurrentFamilyId();
+            String familyId = user.getCurrentFamilyId() != null ? String.valueOf(user.getCurrentFamilyId()) : null;
             if (familyId == null) {
                 throw new UnauthorizedException("请先选择家庭");
             }

@@ -58,7 +58,7 @@ public abstract class BaseController {
             return null;
         }
 
-        return user.getCurrentFamilyId();
+        return user.getCurrentFamilyId() != null ? String.valueOf(user.getCurrentFamilyId()) : null;
     }
 
     /**

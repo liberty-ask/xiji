@@ -54,7 +54,7 @@ class MobileFamilyControllerTest {
     @Test
     void changePassword_success_revokesAllRefreshTokens() throws Exception {
         User user = new User();
-        user.setId("1");
+        user.setId(1L);
         user.setUsername("testuser");
         user.setPassword(PasswordUtils.encode("old123"));
         when(userService.getById("1")).thenReturn(user);
@@ -73,7 +73,7 @@ class MobileFamilyControllerTest {
     @Test
     void changePassword_wrongOldPassword_noRevoke() throws Exception {
         User user = new User();
-        user.setId("1");
+        user.setId(1L);
         user.setUsername("testuser");
         user.setPassword(PasswordUtils.encode("old123"));
         when(userService.getById("1")).thenReturn(user);

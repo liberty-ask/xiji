@@ -68,7 +68,7 @@ class MobileAuthControllerTest {
 
     private User mockUser() {
         User user = new User();
-        user.setId("1");
+        user.setId(1L);
         user.setUsername("13800000000");
         user.setName("测试用户");
         user.setPhone("13800000000");

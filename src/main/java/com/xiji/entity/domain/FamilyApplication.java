@@ -18,18 +18,18 @@ public class FamilyApplication extends BaseEntity {
     /**
      * 申请ID
      */
-    @TableId(type = IdType.INPUT)
-    private String id;
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
 
     /**
      * 家庭ID
      */
-    private String familyId;
+    private Long familyId;
 
     /**
      * 申请人ID
      */
-    private String userId;
+    private Long userId;
     
     /**
      * 状态：0-待审核，1-已批准，2-已拒绝

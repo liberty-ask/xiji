@@ -52,9 +52,8 @@ public class FamilyApplicationServiceImpl extends ServiceImpl<FamilyApplicationM
         
         // 创建申请
         FamilyApplication application = new FamilyApplication();
-        application.setId(java.util.UUID.randomUUID().toString());
-        application.setFamilyId(familyId);
-        application.setUserId(userId);
+        application.setFamilyId(Long.valueOf(familyId));
+        application.setUserId(Long.valueOf(userId));
         application.setStatus(0); // 待审核
         application.setNote(note);
         application.setCreatedAt(LocalDateTime.now());
@@ -92,7 +91,7 @@ public class FamilyApplicationServiceImpl extends ServiceImpl<FamilyApplicationM
         
         // 如果批准，将用户加入家庭
         if (success && status == 1) {
-            familyMemberService.addMemberToFamily(application.getFamilyId(), application.getUserId(), 0);
+            familyMemberService.addMemberToFamily(String.valueOf(application.getFamilyId()), String.valueOf(application.getUserId()), 0);
             log.info("批准加入家庭，familyId={}，userId={}，applicationId={}", application.getFamilyId(), application.getUserId(), applicationId);
         } else if (success && status == 2) {
             log.info("拒绝加入家庭，familyId={}，userId={}，applicationId={}", application.getFamilyId(), application.getUserId(), applicationId);
