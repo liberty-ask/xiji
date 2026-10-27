@@ -63,10 +63,13 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean removeMemberFromFamily(Long familyId, Long userId) {
+        // 物理清理历史墓碑行：退出过的成员再加入再退出时，逻辑删除会与旧墓碑行 (family_id, user_id, deleted=1) 撞唯一索引
+        baseMapper.deleteTombstones(familyId, userId);
+
         LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FamilyMember::getFamilyId, familyId)
                    .eq(FamilyMember::getUserId, userId);
-        
+
         boolean success = remove(queryWrapper);
         if (success) {
             log.info("用户退出家庭成功，familyId={}，userId={}", familyId, userId);
