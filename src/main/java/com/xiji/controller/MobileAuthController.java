@@ -190,13 +190,12 @@ public class MobileAuthController {
         MobileLoginResponse response = new MobileLoginResponse();
         MobileUserResponse userResponse = new MobileUserResponse();
         BeanUtils.copyProperties(user, userResponse);
-        // Long ID -> String DTO 字段（BeanUtils 类型不匹配会跳过，手动补齐）
-        userResponse.setId(String.valueOf(user.getId()));
+        userResponse.setId(user.getId());
 
         // 从当前家庭获取角色
         int role = 0; // 默认普通成员
         if (user.getCurrentFamilyId() != null) {
-            Integer memberRole = familyMemberService.getMemberRole(String.valueOf(user.getCurrentFamilyId()), String.valueOf(user.getId()));
+            Integer memberRole = familyMemberService.getMemberRole(user.getCurrentFamilyId(), user.getId());
             role = memberRole != null ? memberRole : 0;
         }
         userResponse.setRole(role);
@@ -267,9 +266,9 @@ public class MobileAuthController {
     @OperationLog(description = "用户登出")
     @PostMapping("/logout")
     public ResultVo logout(HttpServletRequest request) {
-        String userId = (String) request.getAttribute("userId");
+        Long userId = (Long) request.getAttribute("userId");
         if (userId != null) {
-            refreshTokenService.revokeAll(userId);
+            refreshTokenService.revokeAll(String.valueOf(userId));
             log.info("用户登出，已全端撤销refresh token，userId={}", userId);
         }
         return ResultVo.success("登出成功");
@@ -342,14 +341,14 @@ public class MobileAuthController {
             }
             
             // 注册成功后，自动创建家庭
-            String familyId;
+            Long familyId;
             int role = 0; // 默认普通成员
-            
+
             String familyName = request.getNickname() + "的家庭";
-            Family family = familyService.createFamily(familyName, String.valueOf(user.getId()));
-            familyId = String.valueOf(family.getId());
+            Family family = familyService.createFamily(familyName, user.getId());
+            familyId = family.getId();
             // 将用户加入家庭（通过family_member表），创建者自动成为管理员
-            familyMemberService.addMemberToFamily(familyId, String.valueOf(user.getId()), 1);
+            familyMemberService.addMemberToFamily(familyId, user.getId(), 1);
             role = 1; // 创建者自动成为管理员
             // 设置当前选择的家庭
             user.setCurrentFamilyId(family.getId());
@@ -368,7 +367,7 @@ public class MobileAuthController {
             response.setRefreshToken(refreshTokenService.generate(String.valueOf(user.getId())));
             
             MobileUserResponse userResponse = new MobileUserResponse();
-            userResponse.setId(String.valueOf(user.getId()));
+            userResponse.setId(user.getId());
             userResponse.setNickname(user.getName());
             userResponse.setPhone(user.getPhone());
             userResponse.setRole(role);

@@ -57,11 +57,11 @@ class MobileFamilyControllerTest {
         user.setId(1L);
         user.setUsername("testuser");
         user.setPassword(PasswordUtils.encode("old123"));
-        when(userService.getById("1")).thenReturn(user);
+        when(userService.getById(1L)).thenReturn(user);
         when(userService.updateById(any(User.class))).thenReturn(true);
 
         mockMvc.perform(post("/api/v1/user/change-password")
-                        .requestAttr("userId", "1")
+                        .requestAttr("userId", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"oldPassword\":\"old123\",\"newPassword\":\"new123456\"}"))
                 .andExpect(status().isOk())
@@ -76,10 +76,10 @@ class MobileFamilyControllerTest {
         user.setId(1L);
         user.setUsername("testuser");
         user.setPassword(PasswordUtils.encode("old123"));
-        when(userService.getById("1")).thenReturn(user);
+        when(userService.getById(1L)).thenReturn(user);
 
         mockMvc.perform(post("/api/v1/user/change-password")
-                        .requestAttr("userId", "1")
+                        .requestAttr("userId", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"oldPassword\":\"wrongpwd\",\"newPassword\":\"new123456\"}"))
                 .andExpect(jsonPath("$.code").value(500));
@@ -91,36 +91,36 @@ class MobileFamilyControllerTest {
 
     @Test
     void reportSyncStatus_enabled_updatesAllFamilyRows() throws Exception {
-        when(familyMemberService.updateSyncEnabledForAllFamilies("1", 1)).thenReturn(true);
+        when(familyMemberService.updateSyncEnabledForAllFamilies(1L, 1)).thenReturn(true);
 
         mockMvc.perform(post("/api/v1/families/sync-status")
-                        .requestAttr("userId", "1")
+                        .requestAttr("userId", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"enabled\":true}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
 
-        verify(familyMemberService).updateSyncEnabledForAllFamilies("1", 1);
+        verify(familyMemberService).updateSyncEnabledForAllFamilies(1L, 1);
     }
 
     @Test
     void reportSyncStatus_disabled_projectsZero() throws Exception {
-        when(familyMemberService.updateSyncEnabledForAllFamilies("1", 0)).thenReturn(true);
+        when(familyMemberService.updateSyncEnabledForAllFamilies(1L, 0)).thenReturn(true);
 
         mockMvc.perform(post("/api/v1/families/sync-status")
-                        .requestAttr("userId", "1")
+                        .requestAttr("userId", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"enabled\":false}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
 
-        verify(familyMemberService).updateSyncEnabledForAllFamilies("1", 0);
+        verify(familyMemberService).updateSyncEnabledForAllFamilies(1L, 0);
     }
 
     @Test
     void reportSyncStatus_missingEnabled_rejected() throws Exception {
         mockMvc.perform(post("/api/v1/families/sync-status")
-                        .requestAttr("userId", "1")
+                        .requestAttr("userId", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(jsonPath("$.code").value(500));

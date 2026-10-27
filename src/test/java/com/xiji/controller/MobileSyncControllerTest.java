@@ -51,7 +51,7 @@ class MobileSyncControllerTest {
     }
 
     private static final String PUSH_BODY =
-            "{\"familyId\":\"f1\",\"records\":[{"
+            "{\"familyId\":\"1\",\"records\":[{"
                     + "\"id\":\"r1\",\"version\":1,\"updatedAt\":1000,\"deleted\":0,"
                     + "\"nonce\":\"AQID\",\"ciphertext\":\"BAUG\"}]}";
 
@@ -83,11 +83,11 @@ class MobileSyncControllerTest {
 
     @Test
     void push_success_returnsPerRecordResults() throws Exception {
-        when(familyMemberService.isMemberOfFamily("f1", "u1")).thenReturn(true);
-        when(syncRecordService.push(eq("f1"), anyList())).thenReturn(pushResponse());
+        when(familyMemberService.isMemberOfFamily(1L, 7L)).thenReturn(true);
+        when(syncRecordService.push(eq(1L), anyList())).thenReturn(pushResponse());
 
         mockMvc.perform(post("/api/v1/sync/push")
-                        .requestAttr("userId", "u1")
+                        .requestAttr("userId", 7L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(PUSH_BODY))
                 .andExpect(status().isOk())
@@ -97,21 +97,21 @@ class MobileSyncControllerTest {
                 .andExpect(jsonPath("$.data.results[0].id").value("r1"))
                 .andExpect(jsonPath("$.data.results[0].accepted").value(true));
 
-        verify(syncRecordService).push(eq("f1"), anyList());
+        verify(syncRecordService).push(eq(1L), anyList());
     }
 
     @Test
     void push_notFamilyMember_rejected() throws Exception {
-        when(familyMemberService.isMemberOfFamily("f1", "u1")).thenReturn(false);
+        when(familyMemberService.isMemberOfFamily(1L, 7L)).thenReturn(false);
 
         mockMvc.perform(post("/api/v1/sync/push")
-                        .requestAttr("userId", "u1")
+                        .requestAttr("userId", 7L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(PUSH_BODY))
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value("无该家庭的访问权限"));
 
-        verify(syncRecordService, never()).push(anyString(), anyList());
+        verify(syncRecordService, never()).push(anyLong(), anyList());
     }
 
     @Test
@@ -122,19 +122,19 @@ class MobileSyncControllerTest {
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value("用户未登录"));
 
-        verify(syncRecordService, never()).push(anyString(), anyList());
+        verify(syncRecordService, never()).push(anyLong(), anyList());
     }
 
     // ========== pull ==========
 
     @Test
     void pull_success_passesCursorAndLimit() throws Exception {
-        when(familyMemberService.isMemberOfFamily("f1", "u1")).thenReturn(true);
-        when(syncRecordService.pull("f1", 123L, "abc", 50, null)).thenReturn(pullResponse());
+        when(familyMemberService.isMemberOfFamily(1L, 7L)).thenReturn(true);
+        when(syncRecordService.pull(1L, 123L, "abc", 50, null)).thenReturn(pullResponse());
 
         mockMvc.perform(get("/api/v1/sync/pull")
-                        .requestAttr("userId", "u1")
-                        .param("familyId", "f1")
+                        .requestAttr("userId", 7L)
+                        .param("familyId", "1")
                         .param("cursorTime", "123")
                         .param("cursorId", "abc")
                         .param("limit", "50"))
@@ -144,47 +144,47 @@ class MobileSyncControllerTest {
                 .andExpect(jsonPath("$.data.records[0].nonce").value("AQID"))
                 .andExpect(jsonPath("$.data.hasMore").value(false));
 
-        verify(syncRecordService).pull("f1", 123L, "abc", 50, null);
+        verify(syncRecordService).pull(1L, 123L, "abc", 50, null);
     }
 
     @Test
     void pull_newDevice_noCursor_fullPull() throws Exception {
-        when(familyMemberService.isMemberOfFamily("f1", "u1")).thenReturn(true);
-        when(syncRecordService.pull("f1", null, null, null, null)).thenReturn(pullResponse());
+        when(familyMemberService.isMemberOfFamily(1L, 7L)).thenReturn(true);
+        when(syncRecordService.pull(1L, null, null, null, null)).thenReturn(pullResponse());
 
         mockMvc.perform(get("/api/v1/sync/pull")
-                        .requestAttr("userId", "u1")
-                        .param("familyId", "f1"))
+                        .requestAttr("userId", 7L)
+                        .param("familyId", "1"))
                 .andExpect(jsonPath("$.code").value(200));
 
-        verify(syncRecordService).pull("f1", null, null, null, null);
+        verify(syncRecordService).pull(1L, null, null, null, null);
     }
 
     @Test
     void pull_byRecordId_passesThrough() throws Exception {
-        when(familyMemberService.isMemberOfFamily("f1", "u1")).thenReturn(true);
-        when(syncRecordService.pull("f1", null, null, null, "vault-u1")).thenReturn(pullResponse());
+        when(familyMemberService.isMemberOfFamily(1L, 7L)).thenReturn(true);
+        when(syncRecordService.pull(1L, null, null, null, "vault-u1")).thenReturn(pullResponse());
 
         mockMvc.perform(get("/api/v1/sync/pull")
-                        .requestAttr("userId", "u1")
-                        .param("familyId", "f1")
+                        .requestAttr("userId", 7L)
+                        .param("familyId", "1")
                         .param("recordId", "vault-u1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
 
-        verify(syncRecordService).pull("f1", null, null, null, "vault-u1");
+        verify(syncRecordService).pull(1L, null, null, null, "vault-u1");
     }
 
     @Test
     void pull_notFamilyMember_rejected() throws Exception {
-        when(familyMemberService.isMemberOfFamily("f1", "u1")).thenReturn(false);
+        when(familyMemberService.isMemberOfFamily(1L, 7L)).thenReturn(false);
 
         mockMvc.perform(get("/api/v1/sync/pull")
-                        .requestAttr("userId", "u1")
-                        .param("familyId", "f1"))
+                        .requestAttr("userId", 7L)
+                        .param("familyId", "1"))
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value("无该家庭的访问权限"));
 
-        verify(syncRecordService, never()).pull(anyString(), any(), anyString(), any(), any());
+        verify(syncRecordService, never()).pull(anyLong(), any(), anyString(), any(), any());
     }
 }

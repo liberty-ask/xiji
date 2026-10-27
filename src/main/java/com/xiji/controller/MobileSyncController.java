@@ -31,7 +31,7 @@ public class MobileSyncController extends BaseController {
      */
     @PostMapping("/push")
     public ResultVo push(@Valid @RequestBody SyncPushRequest request, HttpServletRequest httpRequest) {
-        String userId = getCurrentUserId(httpRequest);
+        Long userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }
@@ -49,13 +49,13 @@ public class MobileSyncController extends BaseController {
      * 忽略游标；家庭归属不匹配时返回空，服务端对记录内容零感知不变）
      */
     @GetMapping("/pull")
-    public ResultVo pull(@RequestParam String familyId,
+    public ResultVo pull(@RequestParam Long familyId,
                          @RequestParam(required = false) Long cursorTime,
                          @RequestParam(required = false) String cursorId,
                          @RequestParam(required = false) Integer limit,
                          @RequestParam(required = false) String recordId,
                          HttpServletRequest httpRequest) {
-        String userId = getCurrentUserId(httpRequest);
+        Long userId = getCurrentUserId(httpRequest);
         if (userId == null) {
             return ResultVo.error("用户未登录");
         }

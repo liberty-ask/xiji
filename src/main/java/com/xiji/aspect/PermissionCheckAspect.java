@@ -45,7 +45,7 @@ public class PermissionCheckAspect {
             if (userIdObj == null) {
                 throw new UnauthorizedException("未登录或token已过期");
             }
-            String userId = (String) userIdObj;
+            Long userId = (Long) userIdObj;
 
             // 获取用户信息
             User user = userService.getById(userId);
@@ -54,7 +54,7 @@ public class PermissionCheckAspect {
             }
 
             // 获取当前选择的家庭ID
-            String familyId = user.getCurrentFamilyId() != null ? String.valueOf(user.getCurrentFamilyId()) : null;
+            Long familyId = user.getCurrentFamilyId();
             if (familyId == null) {
                 throw new UnauthorizedException("请先选择家庭");
             }

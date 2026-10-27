@@ -13,7 +13,7 @@ import lombok.Data;
 public class ProcessApplicationRequest {
 
     @NotNull(message = "申请ID不能为空")
-    private String id; // Application ID
+    private Long id; // Application ID
     
     @NotBlank(message = "操作类型不能为空")
     @Pattern(regexp = "^(approve|reject)$", message = "操作类型不正确，应为approve或reject")

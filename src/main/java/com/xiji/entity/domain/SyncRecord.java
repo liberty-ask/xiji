@@ -27,7 +27,7 @@ public class SyncRecord {
     /**
      * 家庭ID（明文，路由与鉴权用）
      */
-    private String familyId;
+    private Long familyId;
 
     /**
      * 版本号（明文，LWW仲裁，高者胜）

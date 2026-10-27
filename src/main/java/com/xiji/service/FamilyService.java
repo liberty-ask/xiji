@@ -15,6 +15,6 @@ public interface FamilyService extends IService<Family> {
      * @param ownerId 创建者ID
      * @return 创建的家庭
      */
-    Family createFamily(String name, String ownerId);
+    Family createFamily(String name, Long ownerId);
 }
 

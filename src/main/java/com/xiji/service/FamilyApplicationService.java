@@ -17,21 +17,21 @@ public interface FamilyApplicationService extends IService<FamilyApplication> {
      * @param note 申请备注
      * @return 是否成功
      */
-    boolean applyToJoinFamily(String familyId, String userId, String note);
-    
+    boolean applyToJoinFamily(Long familyId, Long userId, String note);
+
     /**
      * 处理申请（批准或拒绝）
      * @param applicationId 申请ID
      * @param status 状态：1-批准，2-拒绝
      * @return 是否成功
      */
-    boolean processApplication(String applicationId, Integer status);
-    
+    boolean processApplication(Long applicationId, Integer status);
+
     /**
      * 获取待审核申请列表
      * @param familyId 家庭ID
      * @return 申请列表
      */
-    List<FamilyApplication> getPendingApplications(String familyId);
+    List<FamilyApplication> getPendingApplications(Long familyId);
 }
 

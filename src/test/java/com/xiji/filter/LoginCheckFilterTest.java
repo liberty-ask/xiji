@@ -82,7 +82,7 @@ class LoginCheckFilterTest {
 
         assertEquals(200, response.getStatus());
         assertNotNull(chain.getRequest());
-        assertEquals("1", chain.getRequest().getAttribute("userId"));
+        assertEquals(1L, chain.getRequest().getAttribute("userId"));
         assertEquals("testuser", chain.getRequest().getAttribute("username"));
     }
 
@@ -94,7 +94,7 @@ class LoginCheckFilterTest {
 
         assertEquals(200, response.getStatus());
         assertNotNull(chain.getRequest());
-        assertEquals("1", chain.getRequest().getAttribute("userId"));
+        assertEquals(1L, chain.getRequest().getAttribute("userId"));
     }
 
     @Test

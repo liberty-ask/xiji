@@ -37,7 +37,7 @@ public class SyncRecordServiceImpl extends ServiceImpl<SyncRecordMapper, SyncRec
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public SyncPushResponse push(String familyId, List<SyncPushRecord> records) {
+    public SyncPushResponse push(Long familyId, List<SyncPushRecord> records) {
         List<SyncPushItemResult> results = new ArrayList<>(records.size());
         for (SyncPushRecord record : records) {
             results.add(pushOne(familyId, record));
@@ -55,7 +55,7 @@ public class SyncRecordServiceImpl extends ServiceImpl<SyncRecordMapper, SyncRec
     /**
      * 单条推送：按 id 幂等 upsert + LWW 仲裁
      */
-    private SyncPushItemResult pushOne(String familyId, SyncPushRecord item) {
+    private SyncPushItemResult pushOne(Long familyId, SyncPushRecord item) {
         SyncPushItemResult result = new SyncPushItemResult();
         result.setId(item.getId());
         result.setAccepted(false);
@@ -113,7 +113,7 @@ public class SyncRecordServiceImpl extends ServiceImpl<SyncRecordMapper, SyncRec
     }
 
     @Override
-    public SyncPullResponse pull(String familyId, Long cursorTime, String cursorId, Integer limit, String recordId) {
+    public SyncPullResponse pull(Long familyId, Long cursorTime, String cursorId, Integer limit, String recordId) {
         SyncPullResponse response = new SyncPullResponse();
 
         // 精确拉取单条（vault 探测等专项场景）：忽略游标与分页，
@@ -162,7 +162,7 @@ public class SyncRecordServiceImpl extends ServiceImpl<SyncRecordMapper, SyncRec
     /**
      * 推送DTO -> 实体（base64解码为原始字节）
      */
-    private SyncRecord toEntity(String familyId, SyncPushRecord item) {
+    private SyncRecord toEntity(Long familyId, SyncPushRecord item) {
         SyncRecord record = new SyncRecord();
         record.setId(item.getId());
         record.setFamilyId(familyId);

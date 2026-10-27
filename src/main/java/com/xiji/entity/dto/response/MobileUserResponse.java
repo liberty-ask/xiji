@@ -1,5 +1,7 @@
 package com.xiji.entity.dto.response;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 
 /**
@@ -10,8 +12,10 @@ import lombok.Data;
 public class MobileUserResponse {
     /**
      * 用户ID
+     * 雪花ID超JS 2^53精度，序列化为字符串
      */
-    private String id;
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long id;
     
     /**
      * 昵称

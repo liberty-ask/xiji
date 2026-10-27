@@ -11,5 +11,5 @@ import lombok.Data;
 public class SwitchFamilyRequest {
 
     @NotNull(message = "家庭ID不能为空")
-    private String familyId;
+    private Long familyId;
 }

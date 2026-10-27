@@ -58,7 +58,7 @@ class SyncRecordServiceImplTest {
         ReflectionTestUtils.setField(syncRecordService, "baseMapper", syncRecordMapper);
     }
 
-    private SyncRecord existing(String id, String familyId, long version, long updatedAtMillis, int deleted) {
+    private SyncRecord existing(String id, Long familyId, long version, long updatedAtMillis, int deleted) {
         SyncRecord record = new SyncRecord();
         record.setId(id);
         record.setFamilyId(familyId);
@@ -88,7 +88,7 @@ class SyncRecordServiceImplTest {
         when(syncRecordMapper.selectById("r1")).thenReturn(null);
         when(syncRecordMapper.insert(any(SyncRecord.class))).thenReturn(1);
 
-        SyncPushResponse response = syncRecordService.push("f1", List.of(pushItem("r1", 1, 1000, 0)));
+        SyncPushResponse response = syncRecordService.push(1L, List.of(pushItem("r1", 1, 1000, 0)));
 
         assertEquals(1, response.getTotal());
         assertEquals(1, response.getAccepted());
@@ -100,9 +100,9 @@ class SyncRecordServiceImplTest {
 
     @Test
     void push_idempotentDuplicate_sameVersionSameUpdatedAt_acceptedWithoutWrite() {
-        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", "f1", 2, 1000, 0));
+        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", 1L,2, 1000, 0));
 
-        SyncPushResponse response = syncRecordService.push("f1", List.of(pushItem("r1", 2, 1000, 0)));
+        SyncPushResponse response = syncRecordService.push(1L, List.of(pushItem("r1", 2, 1000, 0)));
 
         assertTrue(response.getResults().get(0).isAccepted());
         verify(syncRecordMapper, never()).insert(any(SyncRecord.class));
@@ -111,10 +111,10 @@ class SyncRecordServiceImplTest {
 
     @Test
     void push_higherVersion_overwrites() {
-        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", "f1", 2, 1000, 0));
+        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", 1L,2, 1000, 0));
         when(syncRecordMapper.updateById(any(SyncRecord.class))).thenReturn(1);
 
-        SyncPushResponse response = syncRecordService.push("f1", List.of(pushItem("r1", 3, 2000, 0)));
+        SyncPushResponse response = syncRecordService.push(1L, List.of(pushItem("r1", 3, 2000, 0)));
 
         assertTrue(response.getResults().get(0).isAccepted());
         verify(syncRecordMapper).updateById(any(SyncRecord.class));
@@ -122,9 +122,9 @@ class SyncRecordServiceImplTest {
 
     @Test
     void push_lowerVersion_lwwRejected() {
-        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", "f1", 3, 2000, 0));
+        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", 1L,3, 2000, 0));
 
-        SyncPushResponse response = syncRecordService.push("f1", List.of(pushItem("r1", 2, 5000, 0)));
+        SyncPushResponse response = syncRecordService.push(1L, List.of(pushItem("r1", 2, 5000, 0)));
 
         assertFalse(response.getResults().get(0).isAccepted());
         verify(syncRecordMapper, never()).updateById(any(SyncRecord.class));
@@ -132,10 +132,10 @@ class SyncRecordServiceImplTest {
 
     @Test
     void push_sameVersionNewerUpdatedAt_overwrites() {
-        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", "f1", 2, 1000, 0));
+        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", 1L,2, 1000, 0));
         when(syncRecordMapper.updateById(any(SyncRecord.class))).thenReturn(1);
 
-        SyncPushResponse response = syncRecordService.push("f1", List.of(pushItem("r1", 2, 2000, 0)));
+        SyncPushResponse response = syncRecordService.push(1L, List.of(pushItem("r1", 2, 2000, 0)));
 
         assertTrue(response.getResults().get(0).isAccepted());
         verify(syncRecordMapper).updateById(any(SyncRecord.class));
@@ -143,9 +143,9 @@ class SyncRecordServiceImplTest {
 
     @Test
     void push_sameVersionOlderUpdatedAt_lwwRejected() {
-        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", "f1", 2, 2000, 0));
+        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", 1L,2, 2000, 0));
 
-        SyncPushResponse response = syncRecordService.push("f1", List.of(pushItem("r1", 2, 1000, 0)));
+        SyncPushResponse response = syncRecordService.push(1L, List.of(pushItem("r1", 2, 1000, 0)));
 
         assertFalse(response.getResults().get(0).isAccepted());
         verify(syncRecordMapper, never()).updateById(any(SyncRecord.class));
@@ -154,10 +154,10 @@ class SyncRecordServiceImplTest {
     @Test
     void push_tombstoneHigherVersion_wins() {
         // 设备A删除（墓碑v3）胜过服务端现存编辑（v2）
-        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", "f1", 2, 1000, 0));
+        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", 1L,2, 1000, 0));
         when(syncRecordMapper.updateById(any(SyncRecord.class))).thenReturn(1);
 
-        SyncPushResponse response = syncRecordService.push("f1", List.of(pushItem("r1", 3, 2000, 1)));
+        SyncPushResponse response = syncRecordService.push(1L, List.of(pushItem("r1", 3, 2000, 1)));
 
         assertTrue(response.getResults().get(0).isAccepted());
         ArgumentCaptor<SyncRecord> captor = ArgumentCaptor.forClass(SyncRecord.class);
@@ -168,9 +168,9 @@ class SyncRecordServiceImplTest {
     @Test
     void push_staleEditAfterTombstone_notRevived() {
         // 服务端已是墓碑（v3），离线旧编辑（v2）后到，墓碑不复活
-        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", "f1", 3, 2000, 1));
+        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", 1L,3, 2000, 1));
 
-        SyncPushResponse response = syncRecordService.push("f1", List.of(pushItem("r1", 2, 5000, 0)));
+        SyncPushResponse response = syncRecordService.push(1L, List.of(pushItem("r1", 2, 5000, 0)));
 
         assertFalse(response.getResults().get(0).isAccepted());
         verify(syncRecordMapper, never()).updateById(any(SyncRecord.class));
@@ -179,9 +179,9 @@ class SyncRecordServiceImplTest {
     @Test
     void push_familyMismatch_rejected() {
         // 同ID记录归属其他家庭，拒绝跨家庭覆盖
-        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", "f2", 1, 1000, 0));
+        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", 2L, 1, 1000, 0));
 
-        SyncPushResponse response = syncRecordService.push("f1", List.of(pushItem("r1", 2, 2000, 0)));
+        SyncPushResponse response = syncRecordService.push(1L, List.of(pushItem("r1", 2, 2000, 0)));
 
         assertFalse(response.getResults().get(0).isAccepted());
         verify(syncRecordMapper, never()).insert(any(SyncRecord.class));
@@ -193,7 +193,7 @@ class SyncRecordServiceImplTest {
         SyncPushRecord item = pushItem("r1", 1, 1000, 0);
         item.setNonce("@@@非法@@@");
 
-        SyncPushResponse response = syncRecordService.push("f1", List.of(item));
+        SyncPushResponse response = syncRecordService.push(1L, List.of(item));
 
         assertEquals(1, response.getRejected());
         assertFalse(response.getResults().get(0).isAccepted());
@@ -202,13 +202,13 @@ class SyncRecordServiceImplTest {
 
     @Test
     void push_mixedBatch_perRecordArbitration() {
-        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", "f1", 2, 1000, 0));
+        when(syncRecordMapper.selectById("r1")).thenReturn(existing("r1", 1L,2, 1000, 0));
         when(syncRecordMapper.selectById("r2")).thenReturn(null);
         when(syncRecordMapper.updateById(any(SyncRecord.class))).thenReturn(1);
         when(syncRecordMapper.insert(any(SyncRecord.class))).thenReturn(1);
 
         // r1低version被拒、r2新记录被收
-        SyncPushResponse response = syncRecordService.push("f1",
+        SyncPushResponse response = syncRecordService.push(1L,
                 List.of(pushItem("r1", 1, 5000, 0), pushItem("r2", 1, 1000, 0)));
 
         assertEquals(2, response.getTotal());
@@ -223,9 +223,9 @@ class SyncRecordServiceImplTest {
     @Test
     void pull_full_noCursor_queriesFromStart() {
         when(syncRecordMapper.selectList(any())).thenReturn(List.of(
-                existing("r1", "f1", 1, 1000, 0)));
+                existing("r1", 1L,1, 1000, 0)));
 
-        SyncPullResponse response = syncRecordService.pull("f1", null, null, null, null);
+        SyncPullResponse response = syncRecordService.pull(1L, null, null, null, null);
 
         assertEquals(1, response.getRecords().size());
         assertFalse(response.isHasMore());
@@ -242,7 +242,7 @@ class SyncRecordServiceImplTest {
     void pull_withCursor_buildsTupleCondition() {
         when(syncRecordMapper.selectList(any())).thenReturn(List.of());
 
-        syncRecordService.pull("f1", 5000L, "abc", 50, null);
+        syncRecordService.pull(1L, 5000L, "abc", 50, null);
 
         ArgumentCaptor<LambdaQueryWrapper<SyncRecord>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
         verify(syncRecordMapper).selectList(captor.capture());
@@ -257,11 +257,11 @@ class SyncRecordServiceImplTest {
     @Test
     void pull_moreRecords_setsNextCursorAndTrimsPage() {
         when(syncRecordMapper.selectList(any())).thenReturn(List.of(
-                existing("r1", "f1", 1, 1000, 0),
-                existing("r2", "f1", 2, 2000, 0),
-                existing("r3", "f1", 3, 3000, 1)));
+                existing("r1", 1L,1, 1000, 0),
+                existing("r2", 1L,2, 2000, 0),
+                existing("r3", 1L,3, 3000, 1)));
 
-        SyncPullResponse response = syncRecordService.pull("f1", null, null, 2, null);
+        SyncPullResponse response = syncRecordService.pull(1L, null, null, 2, null);
 
         assertTrue(response.isHasMore());
         assertEquals(2, response.getRecords().size());
@@ -274,10 +274,10 @@ class SyncRecordServiceImplTest {
     @Test
     void pull_lastPage_noMore_noNextCursor() {
         when(syncRecordMapper.selectList(any())).thenReturn(List.of(
-                existing("r1", "f1", 1, 1000, 0),
-                existing("r2", "f1", 2, 2000, 0)));
+                existing("r1", 1L,1, 1000, 0),
+                existing("r2", 1L,2, 2000, 0)));
 
-        SyncPullResponse response = syncRecordService.pull("f1", null, null, 2, null);
+        SyncPullResponse response = syncRecordService.pull(1L, null, null, 2, null);
 
         assertFalse(response.isHasMore());
         assertNull(response.getNextCursorTime());
@@ -287,14 +287,14 @@ class SyncRecordServiceImplTest {
 
     @Test
     void pull_mapsBase64AndMillisRoundTrip() {
-        SyncRecord record = existing("r1", "f1", 7, 1698163200123L, 1);
+        SyncRecord record = existing("r1", 1L,7, 1698163200123L, 1);
         byte[] nonce = {10, 20, 30};
         byte[] ciphertext = {40, 50, 60, 70};
         record.setNonce(nonce);
         record.setCiphertext(ciphertext);
         when(syncRecordMapper.selectList(any())).thenReturn(List.of(record));
 
-        SyncPullResponse response = syncRecordService.pull("f1", null, null, 10, null);
+        SyncPullResponse response = syncRecordService.pull(1L, null, null, 10, null);
 
         SyncPullRecord item = response.getRecords().get(0);
         assertEquals("r1", item.getId());
@@ -310,10 +310,10 @@ class SyncRecordServiceImplTest {
     @Test
     void pull_byRecordId_buildsExactConditionIgnoringCursorAndLimit() {
         when(syncRecordMapper.selectList(any())).thenReturn(List.of(
-                existing("vault-u1", "f1", 3, 1, 0)));
+                existing("vault-u1", 1L,3, 1, 0)));
 
         SyncPullResponse response =
-                syncRecordService.pull("f1", 9999L, "zzz", 5000, "vault-u1");
+                syncRecordService.pull(1L, 9999L, "zzz", 5000, "vault-u1");
 
         assertEquals(1, response.getRecords().size());
         assertEquals("vault-u1", response.getRecords().get(0).getId());
@@ -334,7 +334,7 @@ class SyncRecordServiceImplTest {
         when(syncRecordMapper.selectList(any())).thenReturn(List.of());
 
         SyncPullResponse response =
-                syncRecordService.pull("f1", null, null, null, "vault-none");
+                syncRecordService.pull(1L, null, null, null, "vault-none");
 
         assertTrue(response.getRecords().isEmpty());
         assertFalse(response.isHasMore());
@@ -344,7 +344,7 @@ class SyncRecordServiceImplTest {
     void pull_limitAboveMax_clampedTo2000() {
         when(syncRecordMapper.selectList(any())).thenReturn(List.of());
 
-        syncRecordService.pull("f1", null, null, 99999, null);
+        syncRecordService.pull(1L, null, null, 99999, null);
 
         ArgumentCaptor<LambdaQueryWrapper<SyncRecord>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
         verify(syncRecordMapper).selectList(captor.capture());

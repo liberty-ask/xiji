@@ -31,7 +31,7 @@ public class FamilyApplicationServiceImpl extends ServiceImpl<FamilyApplicationM
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean applyToJoinFamily(String familyId, String userId, String note) {
+    public boolean applyToJoinFamily(Long familyId, Long userId, String note) {
         // 检查用户是否已经在家庭中
         User user = userService.getById(userId);
         if (user == null) {
@@ -52,8 +52,8 @@ public class FamilyApplicationServiceImpl extends ServiceImpl<FamilyApplicationM
         
         // 创建申请
         FamilyApplication application = new FamilyApplication();
-        application.setFamilyId(Long.valueOf(familyId));
-        application.setUserId(Long.valueOf(userId));
+        application.setFamilyId(familyId);
+        application.setUserId(userId);
         application.setStatus(0); // 待审核
         application.setNote(note);
         application.setCreatedAt(LocalDateTime.now());
@@ -70,7 +70,7 @@ public class FamilyApplicationServiceImpl extends ServiceImpl<FamilyApplicationM
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean processApplication(String applicationId, Integer status) {
+    public boolean processApplication(Long applicationId, Integer status) {
         FamilyApplication application = getById(applicationId);
         if (application == null) {
             throw new RuntimeException("申请不存在");
@@ -91,7 +91,7 @@ public class FamilyApplicationServiceImpl extends ServiceImpl<FamilyApplicationM
         
         // 如果批准，将用户加入家庭
         if (success && status == 1) {
-            familyMemberService.addMemberToFamily(String.valueOf(application.getFamilyId()), String.valueOf(application.getUserId()), 0);
+            familyMemberService.addMemberToFamily(application.getFamilyId(), application.getUserId(), 0);
             log.info("批准加入家庭，familyId={}，userId={}，applicationId={}", application.getFamilyId(), application.getUserId(), applicationId);
         } else if (success && status == 2) {
             log.info("拒绝加入家庭，familyId={}，userId={}，applicationId={}", application.getFamilyId(), application.getUserId(), applicationId);
@@ -103,7 +103,7 @@ public class FamilyApplicationServiceImpl extends ServiceImpl<FamilyApplicationM
     }
     
     @Override
-    public List<FamilyApplication> getPendingApplications(String familyId) {
+    public List<FamilyApplication> getPendingApplications(Long familyId) {
         LambdaQueryWrapper<FamilyApplication> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FamilyApplication::getFamilyId, familyId)
                    .eq(FamilyApplication::getStatus, 0)

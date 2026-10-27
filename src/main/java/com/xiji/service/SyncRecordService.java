@@ -24,7 +24,7 @@ public interface SyncRecordService extends IService<SyncRecord> {
      * @param records  推送记录列表
      * @return 逐条接受/拒绝结果
      */
-    SyncPushResponse push(String familyId, List<SyncPushRecord> records);
+    SyncPushResponse push(Long familyId, List<SyncPushRecord> records);
 
     /**
      * 按游标增量拉取同步记录
@@ -38,5 +38,5 @@ public interface SyncRecordService extends IService<SyncRecord> {
      * @param recordId    精确拉取的记录ID，null 走游标分页
      * @return 本页记录与下一页游标
      */
-    SyncPullResponse pull(String familyId, Long cursorTime, String cursorId, Integer limit, String recordId);
+    SyncPullResponse pull(Long familyId, Long cursorTime, String cursorId, Integer limit, String recordId);
 }

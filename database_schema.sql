@@ -133,7 +133,7 @@ CREATE TABLE `operation_logs` (
 -- ============================================
 CREATE TABLE `sync_records` (
     `id` VARCHAR(36) NOT NULL COMMENT '记录ID（客户端生成UUIDv7）',
-    `family_id` VARCHAR(36) NOT NULL COMMENT '家庭ID（路由与鉴权）',
+    `family_id` BIGINT NOT NULL COMMENT '家庭ID（路由与鉴权）',
     `version` BIGINT NOT NULL COMMENT '版本号（LWW仲裁，高者胜）',
     `updated_at` DATETIME(3) NOT NULL COMMENT '更新时间（客户端提供，毫秒精度，拉取游标）',
     `deleted` INT(1) NOT NULL DEFAULT 0 COMMENT '墓碑标识：0-正常，1-已删除',

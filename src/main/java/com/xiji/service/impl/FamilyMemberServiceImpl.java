@@ -24,18 +24,18 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
         implements FamilyMemberService {
     
     @Override
-    public List<String> getUserFamilyIds(String userId) {
+    public List<Long> getUserFamilyIds(Long userId) {
         LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FamilyMember::getUserId, userId);
         List<FamilyMember> members = list(queryWrapper);
         return members.stream()
-            .map(m -> String.valueOf(m.getFamilyId()))
+            .map(FamilyMember::getFamilyId)
             .collect(Collectors.toList());
     }
-    
+
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean addMemberToFamily(String familyId, String userId, Integer role) {
+    public boolean addMemberToFamily(Long familyId, Long userId, Integer role) {
         // 检查是否已经存在
         LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FamilyMember::getFamilyId, familyId)
@@ -44,10 +44,10 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
             log.warn("用户已经是该家庭的成员，familyId={}，userId={}", familyId, userId);
             return false;
         }
-        
+
         FamilyMember member = new FamilyMember();
-        member.setFamilyId(Long.valueOf(familyId));
-        member.setUserId(Long.valueOf(userId));
+        member.setFamilyId(familyId);
+        member.setUserId(userId);
         member.setRole(role != null ? role : 0);
         member.setCreatedAt(LocalDateTime.now());
         
@@ -62,7 +62,7 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean removeMemberFromFamily(String familyId, String userId) {
+    public boolean removeMemberFromFamily(Long familyId, Long userId) {
         LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FamilyMember::getFamilyId, familyId)
                    .eq(FamilyMember::getUserId, userId);
@@ -77,7 +77,7 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
     }
     
     @Override
-    public boolean isMemberOfFamily(String familyId, String userId) {
+    public boolean isMemberOfFamily(Long familyId, Long userId) {
         LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FamilyMember::getFamilyId, familyId)
                    .eq(FamilyMember::getUserId, userId);
@@ -85,7 +85,7 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
     }
     
     @Override
-    public Integer getMemberRole(String familyId, String userId) {
+    public Integer getMemberRole(Long familyId, Long userId) {
         LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FamilyMember::getFamilyId, familyId)
                    .eq(FamilyMember::getUserId, userId);
@@ -95,7 +95,7 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateSyncEnabledForAllFamilies(String userId, Integer syncEnabled) {
+    public boolean updateSyncEnabledForAllFamilies(Long userId, Integer syncEnabled) {
         // 开关是账号级语义（客户端 vault.enabled 全家庭共享），一次更新
         // 该用户全部家庭的投影行；机制状态明文不涉隐私（见 D13 8.2）
         LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();

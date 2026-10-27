@@ -21,10 +21,10 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family> impleme
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Family createFamily(String name, String ownerId) {
+    public Family createFamily(String name, Long ownerId) {
         Family family = new Family();
         family.setName(name);
-        family.setOwnerId(Long.valueOf(ownerId));
+        family.setOwnerId(ownerId);
         family.setCreatedAt(LocalDateTime.now());
         family.setUpdatedAt(LocalDateTime.now());
         

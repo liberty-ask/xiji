@@ -161,7 +161,7 @@ class MobileAuthControllerTest {
     @Test
     void logout_revokesAllRefreshTokens() throws Exception {
         mockMvc.perform(post("/api/v1/auth/logout")
-                        .requestAttr("userId", "1"))
+                        .requestAttr("userId", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
 
@@ -172,7 +172,7 @@ class MobileAuthControllerTest {
     void logout_repeat_isIdempotent() throws Exception {
         for (int i = 0; i < 2; i++) {
             mockMvc.perform(post("/api/v1/auth/logout")
-                            .requestAttr("userId", "1"))
+                            .requestAttr("userId", 1L))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(200));
         }
