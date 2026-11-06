@@ -37,10 +37,7 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
     @Transactional(rollbackFor = Exception.class)
     public boolean addMemberToFamily(Long familyId, Long userId, Integer role) {
         // 检查是否已经存在
-        LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(FamilyMember::getFamilyId, familyId)
-                   .eq(FamilyMember::getUserId, userId);
-        if (count(queryWrapper) > 0) {
+        if (count(familyMemberQuery(familyId, userId)) > 0) {
             log.warn("用户已经是该家庭的成员，familyId={}，userId={}", familyId, userId);
             return false;
         }
@@ -75,18 +72,12 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
     
     @Override
     public boolean isMemberOfFamily(Long familyId, Long userId) {
-        LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(FamilyMember::getFamilyId, familyId)
-                   .eq(FamilyMember::getUserId, userId);
-        return count(queryWrapper) > 0;
+        return count(familyMemberQuery(familyId, userId)) > 0;
     }
     
     @Override
     public Integer getMemberRole(Long familyId, Long userId) {
-        LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(FamilyMember::getFamilyId, familyId)
-                   .eq(FamilyMember::getUserId, userId);
-        FamilyMember member = getOne(queryWrapper);
+        FamilyMember member = getOne(familyMemberQuery(familyId, userId));
         return member != null ? member.getRole() : null;
     }
 
@@ -106,6 +97,14 @@ public class FamilyMemberServiceImpl extends ServiceImpl<FamilyMemberMapper, Fam
             log.warn("同步开关投影更新失败，userId={}，syncEnabled={}", userId, syncEnabled);
         }
         return success;
+    }
+
+    /** 家庭成员定位条件：familyId + userId（成员关系唯一键） */
+    private LambdaQueryWrapper<FamilyMember> familyMemberQuery(Long familyId, Long userId) {
+        LambdaQueryWrapper<FamilyMember> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(FamilyMember::getFamilyId, familyId)
+                   .eq(FamilyMember::getUserId, userId);
+        return queryWrapper;
     }
 }
 

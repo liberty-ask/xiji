@@ -186,8 +186,8 @@ public class MobileAuthController {
             return ResultVo.error("用户已被禁用，请联系管理员解封");
         }
         
-        // 构建登录响应
-        MobileLoginResponse response = new MobileLoginResponse();
+        // 构建登录响应（access + refresh）
+        MobileLoginResponse response = issueTokens(user);
         MobileUserResponse userResponse = new MobileUserResponse();
         BeanUtils.copyProperties(user, userResponse);
         userResponse.setId(user.getId());
@@ -207,15 +207,6 @@ public class MobileAuthController {
         
         // 设置昵称（使用name字段）
         userResponse.setNickname(user.getName());
-        
-        // 生成JWT Token（不再包含role，权限检查时从家庭成员表获取）
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("username", user.getUsername());
-        // id 一律字符串化：19 位雪花超 JS 2^53 精度，JWT/JSON 数字域均会截断
-        claims.put("id", String.valueOf(user.getId()));
-        // 双token：access（短有效期）+ refresh（长有效期）
-        response.setAccessToken(JwtUtils.generateJwt(claims, JwtUtils.getAccessExpire()));
-        response.setRefreshToken(refreshTokenService.generate(String.valueOf(user.getId())));
         response.setUser(userResponse);
 
         log.info("用户登录成功，userId={}，mode={}", user.getId(), mode);
@@ -249,9 +240,7 @@ public class MobileAuthController {
 
         // 轮换refresh token并签发新access token
         String newRefreshToken = refreshTokenService.rotate(refreshToken, userId);
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("username", user.getUsername());
-        claims.put("id", String.valueOf(user.getId()));
+        Map<String, Object> claims = buildTokenClaims(user);
 
         Map<String, Object> data = new HashMap<>();
         data.put("accessToken", JwtUtils.generateJwt(claims, JwtUtils.getAccessExpire()));
@@ -355,16 +344,8 @@ public class MobileAuthController {
             userService.updateById(user);
             log.info("用户注册成功并创建家庭，userId={}，familyId={}", user.getId(), familyId);
             
-            // 生成JWT Token（不再包含role，权限检查时从家庭成员表获取）
-            Map<String, Object> claims = new HashMap<>();
-            claims.put("username", user.getUsername());
-            claims.put("id", String.valueOf(user.getId()));
-
-            // 构建响应
-            MobileLoginResponse response = new MobileLoginResponse();
-            // 双token：access（短有效期）+ refresh（长有效期）
-            response.setAccessToken(JwtUtils.generateJwt(claims, JwtUtils.getAccessExpire()));
-            response.setRefreshToken(refreshTokenService.generate(String.valueOf(user.getId())));
+            // 构建响应（access + refresh）
+            MobileLoginResponse response = issueTokens(user);
             
             MobileUserResponse userResponse = new MobileUserResponse();
             userResponse.setId(user.getId());
@@ -451,6 +432,29 @@ public class MobileAuthController {
             log.error("密码重置失败，userId={}", user.getId());
             return ResultVo.error("密码重置失败");
         }
+    }
+
+    /**
+     * JWT 载荷：username + 字符串化雪花 id
+     * （19 位 id 超 JS 2^53 精度，JWT/JSON 数字域均会截断）
+     */
+    private Map<String, Object> buildTokenClaims(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("username", user.getUsername());
+        claims.put("id", String.valueOf(user.getId()));
+        return claims;
+    }
+
+    /**
+     * 签发双 token：access（短有效期）+ refresh（长有效期）。
+     * 登录与注册共用，避免两处载荷/签发逻辑漂移。
+     */
+    private MobileLoginResponse issueTokens(User user) {
+        MobileLoginResponse response = new MobileLoginResponse();
+        response.setAccessToken(
+                JwtUtils.generateJwt(buildTokenClaims(user), JwtUtils.getAccessExpire()));
+        response.setRefreshToken(refreshTokenService.generate(String.valueOf(user.getId())));
+        return response;
     }
 }
 
