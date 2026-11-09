@@ -47,3 +47,10 @@ start.bat
 
 ### 日志 ###
 logs/
+
+### 数据导出产物 ###
+xiji_backup.json
+*_backup.json
+*.bak
+*.dump
+*.bak.sql
